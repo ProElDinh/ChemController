@@ -1,7 +1,5 @@
 #include "SimpleExchange.h"
 #include <iostream>
-#include <QSerialPort>
-#include <QSerialPortInfo>
 
 using namespace std;
 
