@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QtGui>
 #include <QLabel>
+#include <QSerialPort>
+#include <QSerialPortInfo>
 
 
 QT_BEGIN_NAMESPACE
@@ -18,6 +20,9 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     void StatusBar();
+private slots:
+    void serialRecieve(); // Получаем данные
+    void serialcheck();
 
 
 private:
@@ -25,7 +30,7 @@ private:
     QLabel *status;
     QLabel *thermostat;
     QLabel *reactor;
-
+    QSerialPort *serialPort;
 
 };
 

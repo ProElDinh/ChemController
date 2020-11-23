@@ -1,21 +1,26 @@
 #ifndef SIMPLEEXCHANGE_H
 #define SIMPLEEXCHANGE_H
+#include "mainwindow.h"
 #include <QSerialPort>
 #include <QSerialPortInfo>
+#include <QDebug>
+#include <string>
 
 class SimpleExchange {
 private:
-
-    unsigned short int* Crc16Table; // Создание динамического массива
+    QSerialPort *_serialPort;
+    quint16* Crc16Table; // Создание динамического массива
+    QByteArray *ba; // Массив данных от контроллера
 
 public:
     SimpleExchange();
     ~SimpleExchange();
-    unsigned short int Crc16(unsigned short int pcBlock[], int len);
-    QSerialPort _serialPort;
-
-    const int BUFFER_LEN = 32;
-    const int BAUD_RATE = 57600;
+    quint16 Crc16(quint16 pcBlock[], int len);
+    void getPortName(); // Получение информации об доступных портах
+    bool IsOpen();
+    void Open(QString port);
+    void Write(); // отправить массив данных в контроллер
+    QByteArray Read(); // получить массив данных от контроллера
 };
 
 #endif // SIMPLEEXCHANGE_H

@@ -1,8 +1,6 @@
 #include "SimpleExchange.h"
 #include <iostream>
-
-using namespace std;
-
+#include <QDebug>
 SimpleExchange:: SimpleExchange() {
     /*
     Name  : CRC-16
@@ -13,7 +11,7 @@ SimpleExchange:: SimpleExchange() {
     Check : 0x4B37 ("123456789")
     MaxLen: 4095 bytes
 */
-    Crc16Table = new unsigned short int[256]{
+    Crc16Table = new quint16[256]{
             0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
             0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
             0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40,
@@ -47,17 +45,65 @@ SimpleExchange:: SimpleExchange() {
             0x4400, 0x84C1, 0x8581, 0x4540, 0x8701, 0x47C0, 0x4680, 0x8641,
             0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
     };
+    _serialPort = new QSerialPort();// новый экзампляр класса AbstractSerial
 }
 
 SimpleExchange:: ~SimpleExchange() {
     delete[] Crc16Table; // Удаление при завершении
+    // закрываем соединение при выходе
+    _serialPort -> close();
+    delete _serialPort;
 }
 
 
-unsigned short int SimpleExchange::Crc16(unsigned short int pcBlock[], int len) {
-    unsigned short int crc = 0xFFFF;
+quint16 SimpleExchange::Crc16(quint16 pcBlock[], int len) {
+    quint16 crc = 0xFFFF;
     for (int i = 0; i < len; i++) {
-        crc = (unsigned short int)((crc >> 8) ^ Crc16Table[((crc & 0xFF) ^ pcBlock[i])]);
+        crc = (quint16)((crc >> 8) ^ Crc16Table[((crc & 0xFF) ^ pcBlock[i])]);
     }
     return crc;
 }
+bool SimpleExchange:: IsOpen(){
+     return (_serialPort->isOpen());
+
+}
+
+void SimpleExchange:: getPortName(){
+    foreach (const QSerialPortInfo &info, QSerialPortInfo :: availablePorts()){
+        QSerialPort port;
+        port.setPort(info);
+        if (port.open(QIODevice::ReadWrite)){
+            qDebug() << "Название: " + info.portName() + " " + info.description() + info.manufacturer();
+        }
+
+    }
+
+}
+
+void SimpleExchange :: Open(QString port = "com4"){
+    //если порт открыть был раньше,
+                //то закрываем его
+    if (_serialPort->isOpen()){
+        _serialPort->close();
+    }
+    _serialPort -> setPortName(port); // указываем параметры порта (далее)
+    _serialPort -> setBaudRate(QSerialPort::Baud9600);
+    _serialPort -> setDataBits(QSerialPort::Data8);
+    _serialPort -> setParity(QSerialPort::NoParity);
+    _serialPort -> setStopBits(QSerialPort :: OneStop);
+    _serialPort -> setFlowControl(QSerialPort:: NoFlowControl);
+    _serialPort -> open((QIODevice:: ReadWrite)); // открыли порт
+}
+
+
+void SimpleExchange ::Write(){ // отправить данные в порт
+
+    _serialPort -> write(":");
+
+    _serialPort -> write("=");
+    //QObject::connect(_serialPort, SIGNAL(readyRead()), this, SLOT(Read()));// соединяем чтение - прием данных
+}
+QByteArray SimpleExchange:: Read(){ // получить массив данных от контроллера
+    *ba = _serialPort -> readAll();
+}
+
