@@ -20,10 +20,15 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     void StatusBar();
-private slots:
-    void serialRecieve(); // Получаем данные
-    void serialcheck();
 
+private slots:
+    void Read(); // Получение данных
+    void Open(); // Открытие порта
+    void WriteData(); // Отправка данных
+    void Close();
+    void on_action_triggered();
+
+    void on_action_2_triggered();
 
 private:
     Ui::MainWindow *ui;
@@ -31,6 +36,8 @@ private:
     QLabel *thermostat;
     QLabel *reactor;
     QSerialPort *serialPort;
+    QByteArray serialData;
+    QString serialBuffer;
 
 };
 

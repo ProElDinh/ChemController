@@ -9,9 +9,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
     StatusBar();
-    serialcheck();
-    SimpleExchange ui;
-    ui.getPortName();
+    serialBuffer = "";
+
 }
 
 MainWindow::~MainWindow()
@@ -30,14 +29,14 @@ void MainWindow::StatusBar()
     ui->statusBar->addPermanentWidget(status);
 }
 
-void MainWindow:: serialRecieve(){ // получаем данные
-    QByteArray ba; // массив байтов
-    ba = serialPort -> readAll(); // читаем все
-    ui -> label -> setText(ba.toHex());// переводим в hex
+void MainWindow:: Read(){ // получаем данные
+    serialData = serialPort -> readAll(); // читаем все
+    serialBuffer = QString::fromStdString(serialData.toStdString());
+    qDebug() << serialData;
 
 }
 
-void MainWindow:: serialcheck(){
+void MainWindow:: Open(){
     serialPort = new QSerialPort(this);// новый экзампляр класса AbstractSerial
     if (serialPort->isOpen()){
         serialPort->close();
@@ -48,11 +47,41 @@ void MainWindow:: serialcheck(){
     serialPort -> setParity(QSerialPort::NoParity);
     serialPort -> setStopBits(QSerialPort :: OneStop);
     serialPort -> setFlowControl(QSerialPort:: NoFlowControl);
-    serialPort -> open((QIODevice:: ReadWrite)); // открыли порт
-    serialPort -> write("Hello"); //записываем данные
+    serialPort -> open((QSerialPort:: ReadWrite)); // открыли порт
+ // соединяем чтение - прием данных
+    serialPort -> write("hello");
+    QObject::connect(serialPort, SIGNAL(readyRead()), this, SLOT(Read()));
+    foreach (const QSerialPortInfo &info, QSerialPortInfo :: availablePorts()){
+        QSerialPort port;
+        port.setPort(info);
+        if (port.open(QIODevice::ReadWrite)){
+            qDebug() << "Название: " + info.portName() + " " + info.description() + info.manufacturer();
+        }
 
-    QObject::connect(serialPort, SIGNAL(readyRead()), this, SLOT(serialRecieve()));// соединяем чтение - прием данных
+    }
 
     // получаем список доступных в системе com портов при помощи QSerialPort
 
+}
+void MainWindow:: Close(){
+    serialPort->close();
+}
+
+void MainWindow::WriteData(){
+     serialPort->write(":");
+
+
+
+     serialPort  -> write("=");
+
+}
+
+void MainWindow::on_action_triggered()
+{
+    Open();
+}
+
+void MainWindow::on_action_2_triggered()
+{
+    Close();
 }
