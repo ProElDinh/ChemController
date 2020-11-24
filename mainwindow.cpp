@@ -9,7 +9,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
     StatusBar();
+    serialPort = new QSerialPort(this);// новый экзампляр класса AbstractSerial
     serialBuffer = "";
+    QObject::connect(serialPort, SIGNAL(readyRead()), this, SLOT(Read()));
+    QObject::connect(serialPort, SIGNAL(writeData(QByteArray)), this, SLOT(WriteData()));
 
 }
 
@@ -37,7 +40,6 @@ void MainWindow:: Read(){ // получаем данные
 }
 
 void MainWindow:: Open(){
-    serialPort = new QSerialPort(this);// новый экзампляр класса AbstractSerial
     if (serialPort->isOpen()){
         serialPort->close();
     }
@@ -67,13 +69,14 @@ void MainWindow:: Close(){
     serialPort->close();
 }
 
-void MainWindow::WriteData(){
+void MainWindow::WritetoData(){
+    if (serialPort->isOpen()){
      serialPort->write(":");
 
 
 
      serialPort  -> write("=");
-
+}
 }
 
 void MainWindow::on_action_triggered()

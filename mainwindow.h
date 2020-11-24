@@ -24,7 +24,7 @@ public:
 private slots:
     void Read(); // Получение данных
     void Open(); // Открытие порта
-    void WriteData(); // Отправка данных
+    void WritetoData(); // Отправка данных
     void Close();
     void on_action_triggered();
 

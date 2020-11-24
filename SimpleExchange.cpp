@@ -1,6 +1,5 @@
 #include "SimpleExchange.h"
 #include <iostream>
-#include <QDebug>
 SimpleExchange:: SimpleExchange() {
     /*
     Name  : CRC-16
