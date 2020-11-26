@@ -20,7 +20,7 @@
    <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
-      <x>0</x>
+      <x>-10</x>
       <y>40</y>
       <width>501</width>
       <height>361</height>
@@ -44,8 +44,8 @@
     <property name="title">
      <string>Подключение</string>
     </property>
-    <addaction name="action"/>
-    <addaction name="action_2"/>
+    <addaction name="connect"/>
+    <addaction name="disconnect"/>
     <addaction name="action_3"/>
    </widget>
    <widget class="QMenu" name="menu">
@@ -57,12 +57,12 @@
    <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="action">
+  <action name="connect">
    <property name="text">
     <string>Подключить устройство</string>
    </property>
   </action>
-  <action name="action_2">
+  <action name="disconnect">
    <property name="text">
     <string>Отключить устройство</string>
    </property>

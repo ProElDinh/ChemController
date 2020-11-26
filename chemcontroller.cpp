@@ -1,6 +1,6 @@
 #include "chemcontroller.h"
 
-ChemController::ChemController()
+ChemController::ChemController(QObject *parent) : QObject(parent)
 {
     /*
         Name  : CRC-16
@@ -49,7 +49,9 @@ ChemController::ChemController()
 }
 
 ChemController::~ChemController(){
-     delete[] Crc16Table; // Удаление при завершении
+    delete[] Crc16Table; // Удаление при завершении
+    _SerialPort -> close(); // закрываем соединение при выходе
+    delete _SerialPort;
 }
 
 quint16 ChemController::Crc16(quint16 pcBlock[], int len) {
@@ -58,4 +60,83 @@ quint16 ChemController::Crc16(quint16 pcBlock[], int len) {
         crc = (quint16)((crc >> 8) ^ Crc16Table[((crc & 0xFF) ^ pcBlock[i])]);
     }
     return crc;
+}
+
+void ChemController:: OpenPort(){
+    _SerialPort = new QSerialPort(this);
+    _SerialPort -> setPortName("com4"); // указываем параметры порта (далее)
+    _SerialPort -> setBaudRate(QSerialPort::Baud9600);
+    _SerialPort -> setDataBits(QSerialPort::Data8);
+    _SerialPort -> setParity(QSerialPort::NoParity);
+    _SerialPort -> setStopBits(QSerialPort :: OneStop);
+    _SerialPort -> setFlowControl(QSerialPort:: NoFlowControl);
+    /*  При включенном приборе нужно обязательно, хотя бы раз в секунду,
+        посылать команду на запрос статуса, чтобы подтвердить, что соединение не разорвано.
+        Иначе прибор будет выключен. Для этого создаем таймер с интервалом в 1 секунду. */
+    _pTimerCheckConnection = new QTimer(this);
+    _pTimerCheckConnection->setInterval(1000);
+ // соединяем чтение - прием данных
+    /* По истечении времени 1 с вызывается команда запроса статуса.
+       Здесь используется именно лямбда-функция, чтобы не создавать слот.
+       Можно было бы сделать commandS private slot, но в этом случае при connect
+       через старую форму записи (на макросах SIGNAL, SLOT)
+       этот слот был бы доступен внешним объектам. */
+    connect(_pTimerCheckConnection, &QTimer::timeout, [this](){Checkconnect();});
+
+    connectToPort();  // Подключаем порт
+    _pTimerCheckConnection->start();
+}
+
+bool ChemController:: Checkconnect(){
+    QByteArray receivedData  = writeAndRead("hello there");
+    return true;
+}
+
+QByteArray ChemController::writeAndRead(QByteArray _SendData){
+    QByteArray SendData; // Данные, посылаемые в порт
+    SendData = _SendData;
+    _SerialPort->write(":");
+
+    _SerialPort ->write(SendData);
+
+    _SerialPort  -> write("=");
+
+
+    QByteArray data = _SerialPort -> readAll();
+    return data;
+
+}
+
+
+void ChemController :: connectToPort(){
+    if (_SerialPort->open(QSerialPort::ReadWrite))
+    {
+        // Убеждаемся, что в последовательный порт подключен именно в нужное устройство.
+        _isConnected = Checkconnect();
+        if (_isConnected)
+        {
+            qDebug() << "Устройство подключено.";
+        }
+        else
+        {
+            qDebug() << "В последовательный порт устройства подключено другое устройство!";
+        }
+    }
+    else
+    {
+        qDebug() << "Последовательный порт не подключен.";
+        _isConnected = false;
+    }
+}
+
+void ChemController :: ClosePort(){
+     QByteArray receivedData = writeAndRead("Close Port");
+     qDebug() << "Устройство выключено.";
+     _pTimerCheckConnection ->stop();
+     _SerialPort -> close();
+}
+
+
+bool ChemController :: isConnected() const{
+    return _isConnected;
 }

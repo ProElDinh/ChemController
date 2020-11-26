@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "SimpleExchange.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -8,20 +7,40 @@ MainWindow::MainWindow(QWidget *parent)
 {
 
     ui->setupUi(this);
-    StatusBar();
-    serialPort = new QSerialPort(this);// новый экзампляр класса AbstractSerial
-    serialBuffer = "";
-    QObject::connect(serialPort, SIGNAL(readyRead()), this, SLOT(Read()));
-    QObject::connect(serialPort, SIGNAL(writeData(QByteArray)), this, SLOT(WriteData()));
+    _Thread = new QThread(this);
+    // Указывать родителя нет необходимости. Родителем станет поток, когда переместим в него наш объект излучателя.
+    _chemconroller = new ChemController;
+    /* Перемещаем объект излучателя в отдельный поток, чтобы синхронные ожидающие операции не блокировали
+    основной GUI-поток. Создаем соединение: Удаляем объект излучателя при окончании работы потока.
+    Запускаем поток.*/
+    _chemconroller->moveToThread(_Thread);
+    connect(_Thread, SIGNAL(finished()), _chemconroller, SLOT(deleteLater()));
+    _Thread->start();
+
+    //проверка соединения
+    if (!_chemconroller -> isConnected()){
+        ui -> disconnect -> setEnabled(false);
+    }
+
+
+    connect(ui->connect, &QAction::triggered, _chemconroller, &ChemController::OpenPort);
+    connect(ui->connect, &QAction::triggered, [this](){
+            ui->connect->setEnabled(false);
+            ui->disconnect->setEnabled(true);
+});
+    connect(ui->disconnect, &QAction::triggered, _chemconroller, &ChemController::ClosePort);
+        connect(ui->disconnect, &QAction::triggered, [this](){
+            ui->connect->setEnabled(true);
+            ui->disconnect->setEnabled(false);
+        });
 
 }
-
 MainWindow::~MainWindow()
 {
+    _Thread->quit();
+    _Thread->wait(1000);
     delete ui;
-    // закрываем соединение при выходе
-    serialPort -> close();
-    delete serialPort;
+
 }
 
 void MainWindow::StatusBar()
@@ -32,59 +51,4 @@ void MainWindow::StatusBar()
     ui->statusBar->addPermanentWidget(status);
 }
 
-void MainWindow:: Read(){ // получаем данные
-    serialData = serialPort -> readAll(); // читаем все
-    serialBuffer = QString::fromStdString(serialData.toStdString());
-    qDebug() << serialData;
 
-}
-
-void MainWindow:: Open(){
-    if (serialPort->isOpen()){
-        serialPort->close();
-    }
-    serialPort -> setPortName("com4"); // указываем параметры порта (далее)
-    serialPort -> setBaudRate(QSerialPort::Baud9600);
-    serialPort -> setDataBits(QSerialPort::Data8);
-    serialPort -> setParity(QSerialPort::NoParity);
-    serialPort -> setStopBits(QSerialPort :: OneStop);
-    serialPort -> setFlowControl(QSerialPort:: NoFlowControl);
-    serialPort -> open((QSerialPort:: ReadWrite)); // открыли порт
- // соединяем чтение - прием данных
-    serialPort -> write("hello");
-    QObject::connect(serialPort, SIGNAL(readyRead()), this, SLOT(Read()));
-    foreach (const QSerialPortInfo &info, QSerialPortInfo :: availablePorts()){
-        QSerialPort port;
-        port.setPort(info);
-        if (port.open(QIODevice::ReadWrite)){
-            qDebug() << "Название: " + info.portName() + " " + info.description() + info.manufacturer();
-        }
-
-    }
-
-    // получаем список доступных в системе com портов при помощи QSerialPort
-
-}
-void MainWindow:: Close(){
-    serialPort->close();
-}
-
-void MainWindow::WritetoData(){
-    if (serialPort->isOpen()){
-     serialPort->write(":");
-
-
-
-     serialPort  -> write("=");
-}
-}
-
-void MainWindow::on_action_triggered()
-{
-    Open();
-}
-
-void MainWindow::on_action_2_triggered()
-{
-    Close();
-}

@@ -4,9 +4,11 @@
 #include <QMainWindow>
 #include <QtGui>
 #include <QLabel>
-#include <QSerialPort>
-#include <QSerialPortInfo>
+#include <QMessageBox>
 
+#include <QThread>
+
+#include "chemcontroller.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -22,22 +24,15 @@ public:
     void StatusBar();
 
 private slots:
-    void Read(); // Получение данных
-    void Open(); // Открытие порта
-    void WritetoData(); // Отправка данных
-    void Close();
-    void on_action_triggered();
-
-    void on_action_2_triggered();
 
 private:
     Ui::MainWindow *ui;
     QLabel *status;
     QLabel *thermostat;
     QLabel *reactor;
-    QSerialPort *serialPort;
-    QByteArray serialData;
-    QString serialBuffer;
+    // Устройтсво и отдельный поток, в котором он будет работать.
+    QThread *_Thread;
+    ChemController *_chemconroller;
 
 };
 
