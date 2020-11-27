@@ -8,14 +8,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
     _Thread = new QThread(this);
-    // Указывать родителя нет необходимости. Родителем станет поток, когда переместим в него наш объект излучателя.
+    // Указывать родителя нет необходимости. Родителем станет поток, когда переместим в него объект прибора.
     _chemconroller = new ChemController;
-    /* Перемещаем объект излучателя в отдельный поток, чтобы синхронные ожидающие операции не блокировали
-    основной GUI-поток. Создаем соединение: Удаляем объект излучателя при окончании работы потока.
-    Запускаем поток.*/
+        /* Перемещаем объект прибора в отдельный поток, чтобы синхронные ожидающие операции не блокировали
+    основной GUI-поток. Создаем соединение: Удаляем объект прибора при окончании работы потока.*/
+
     _chemconroller->moveToThread(_Thread);
     connect(_Thread, SIGNAL(finished()), _chemconroller, SLOT(deleteLater()));
-    _Thread->start();
+    _Thread->start();  // Запускаем поток.
 
     //проверка соединения
     if (!_chemconroller -> isConnected()){
@@ -33,7 +33,6 @@ MainWindow::MainWindow(QWidget *parent)
             ui->connect->setEnabled(true);
             ui->disconnect->setEnabled(false);
         });
-
 }
 MainWindow::~MainWindow()
 {
