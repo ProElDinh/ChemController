@@ -12,7 +12,7 @@ ChemController::ChemController(QObject *parent) : QObject(parent)
         MaxLen: 4095 bytes
     */
 
-    Crc16Table = new quint16[256]{
+    Crc16Table = new quint16 [256]{
             0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
             0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
             0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40,
@@ -54,7 +54,7 @@ ChemController::~ChemController(){
     delete _SerialPort;
 }
 
-quint16 ChemController::Crc16(quint16 pcBlock[], int len) {
+quint16 ChemController::Crc16(quint8 pcBlock[], int len) {
     quint16 crc = 0xFFFF;
     for (int i = 0; i < len; i++) {
         crc = (quint16)((crc >> 8) ^ Crc16Table[((crc & 0xFF) ^ pcBlock[i])]);
@@ -88,21 +88,38 @@ void ChemController:: OpenPort(){
 }
 
 bool ChemController:: Checkconnect(){
-    QByteArray receivedData  = writeAndRead("hello there");
+    QByteArray receivedData  = writeAndRead(new quint8 {CMD_NOP});
     return true;
 }
 
-QByteArray ChemController::writeAndRead(QByteArray _SendData){
+QByteArray ChemController::writeAndRead(quint8 Data[]){
     QByteArray SendData; // Данные, посылаемые в порт
-    SendData = _SendData;
+    quint16 crc = Crc16(Data, sizeof(Data)/8);
+    qDebug() << crc;
+    qDebug() << static_cast<quint8>(crc);
+    qDebug() << (crc >> 8);
+
+
+    SendData.append(Data[0]);
+    SendData.append(crc);
+    SendData.append(crc>>8);
+
+
+    qDebug() << SendData.toHex();
+    SendData = SendData.toHex();
+
+//Добавить возможность отправлять помимо состояний ещё и байты.
+// Возможно что массив не обязателен, убрать его и сделать отправку путем обычной строки (quint8 вместо quint8 [])
+
     _SerialPort->write(":");
 
-    _SerialPort ->write(SendData);
+    //_SerialPort ->write(SendData);
 
     _SerialPort  -> write("=");
 
 
     QByteArray data = _SerialPort -> readAll();
+    qDebug() << data;
     return data;
 
 }
@@ -130,7 +147,7 @@ void ChemController :: connectToPort(){
 }
 
 void ChemController :: ClosePort(){
-     QByteArray receivedData = writeAndRead("Close Port");
+     //QByteArray receivedData = writeAndRead({});
      qDebug() << "Устройство выключено.";
      _pTimerCheckConnection ->stop();
      _SerialPort -> close();

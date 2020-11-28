@@ -23,14 +23,15 @@ public slots:
     //void turnoff();
 private:
     bool Checkconnect();
-
     void connectToPort();  // Функция подключения.
-    QByteArray writeAndRead(QByteArray data);  // реализация протокола чтения с устройством
+    QByteArray writeAndRead(quint8 _SendData[]);  // реализация протокола чтения с устройством
     quint16* Crc16Table;
-    quint16 Crc16(quint16 pcBlock[], int len);
+    quint16 Crc16(quint8 pcBlock[], int len);
     QSerialPort *_SerialPort;
     QTimer *_pTimerCheckConnection;
     bool _isConnected;  // Проверка подключения устройства
+
+    quint8 CMD_NOP = 0x00;
 
 };
 
