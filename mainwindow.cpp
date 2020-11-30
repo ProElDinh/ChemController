@@ -19,20 +19,26 @@ MainWindow::MainWindow(QWidget *parent)
 
     //проверка соединения
     if (!_chemconroller -> isConnected()){
-        ui -> disconnect -> setEnabled(false);
+        Disconnect();
+
     }
 
 
-    connect(ui->connect, &QAction::triggered, _chemconroller, &ChemController::OpenPort);
+    connect(ui->connect, &QAction::triggered, _chemconroller, &ChemController::OpenPort); // Подключить устройство
     connect(ui->connect, &QAction::triggered, [this](){
-            ui->connect->setEnabled(false);
-            ui->disconnect->setEnabled(true);
-});
-    connect(ui->disconnect, &QAction::triggered, _chemconroller, &ChemController::ClosePort);
-        connect(ui->disconnect, &QAction::triggered, [this](){
-            ui->connect->setEnabled(true);
-            ui->disconnect->setEnabled(false);
-        });
+            Connect();
+    });
+    connect(ui->disconnect, &QAction::triggered, _chemconroller, &ChemController::ClosePort);  // Отключить устройство
+    connect(ui->disconnect, &QAction::triggered, [this](){
+            Disconnect();
+    });
+    // При нажатии на кнопку "Задать", передаются все соответствующие параметры выставленные в set_tempbox.
+
+    connect(ui->set_temp, &QPushButton::clicked, [this](){
+            emit SetTempRequest(ui->set_tempbox->value());
+    });
+    connect(this, &MainWindow::SetTempRequest, _chemconroller, &ChemController::setTemp);
+
 }
 MainWindow::~MainWindow()
 {
@@ -42,12 +48,30 @@ MainWindow::~MainWindow()
 
 }
 
-void MainWindow::StatusBar()
+void MainWindow::StatusBar(QString status)
 {
-    status = new QLabel(this);
-    status -> setText("Состояние : Отключено");
-    ui->statusBar->setStyleSheet("color: red");
-    ui->statusBar->addPermanentWidget(status);
+    _status -> setText("Состояние : " + status);
+    //ui->statusBar->setStyleSheet("color: red");
+    ui->statusBar->addPermanentWidget(_status);
 }
 
 
+void MainWindow::Connect(){
+    ui->connect->setEnabled(false);
+    ui->disconnect->setEnabled(true);
+    ui -> set_temp -> setEnabled(true);
+    ui -> offTemp -> setEnabled(true);
+    ui -> OnTemp -> setEnabled(true);
+    ui -> set_tempbox -> setEnabled(true);
+    StatusBar("Подключено");
+}
+
+void MainWindow::Disconnect(){
+    ui->connect->setEnabled(true);
+    ui->disconnect->setEnabled(false);
+    ui -> set_temp -> setEnabled(false);
+    ui -> offTemp -> setEnabled(false);
+    ui -> OnTemp -> setEnabled(false);
+    ui -> set_tempbox -> setEnabled(false);
+    StatusBar("Отключено");
+}

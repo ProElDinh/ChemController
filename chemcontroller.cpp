@@ -65,62 +65,80 @@ quint16 ChemController::Crc16(quint8 pcBlock[], int len) {
 void ChemController:: OpenPort(){
     _SerialPort = new QSerialPort(this);
     _SerialPort -> setPortName("com4"); // указываем параметры порта (далее)
-    _SerialPort -> setBaudRate(QSerialPort::Baud9600);
+    _SerialPort -> setBaudRate(QSerialPort::Baud57600);
     _SerialPort -> setDataBits(QSerialPort::Data8);
     _SerialPort -> setParity(QSerialPort::NoParity);
     _SerialPort -> setStopBits(QSerialPort :: OneStop);
     _SerialPort -> setFlowControl(QSerialPort:: NoFlowControl);
-    /*  При включенном приборе нужно обязательно, хотя бы раз в секунду,
-        посылать команду на запрос статуса, чтобы подтвердить, что соединение не разорвано.
-        Иначе прибор будет выключен. Для этого создаем таймер с интервалом в 1 секунду. */
+        /*  При включенном приборе нужно обязательно, хотя бы раз в секунду,
+            посылать команду на запрос статуса, чтобы подтвердить, что соединение не разорвано.
+            Иначе прибор будет выключен. Для этого создаем таймер с интервалом в 1 секунду. */
     _pTimerCheckConnection = new QTimer(this);
     _pTimerCheckConnection->setInterval(1000);
- // соединяем чтение - прием данных
-    /* По истечении времени 1 с вызывается команда запроса статуса.
-       Здесь используется именно лямбда-функция, чтобы не создавать слот.
-       Можно было бы сделать commandS private slot, но в этом случае при connect
-       через старую форму записи (на макросах SIGNAL, SLOT)
-       этот слот был бы доступен внешним объектам. */
+        // соединяем чтение - прием данных
+        /* По истечении времени 1 с вызывается команда запроса статуса.
+        Здесь используется именно лямбда-функция, чтобы не создавать слот.
+        Можно было бы сделать commandS private slot, но в этом случае при connect
+        через старую форму записи (на макросах SIGNAL, SLOT)
+        этот слот был бы доступен внешним объектам. */
     connect(_pTimerCheckConnection, &QTimer::timeout, [this](){Checkconnect();});
 
     connectToPort();  // Подключаем порт
     _pTimerCheckConnection->start();
 }
 
-bool ChemController:: Checkconnect(){
+bool ChemController:: Checkconnect(){  // Запрос статуса и проверка соединения
     QByteArray receivedData  = writeAndRead(new quint8 {CMD_NOP});
     return true;
+    // Дописать обработку исключений
 }
 
-QByteArray ChemController::writeAndRead(quint8 Data[]){
-    QByteArray SendData; // Данные, посылаемые в порт
-    quint16 crc = Crc16(Data, sizeof(Data)/8);
-    qDebug() << crc;
-    qDebug() << static_cast<quint8>(crc);
-    qDebug() << (crc >> 8);
+QByteArray ChemController::writeAndRead(quint8 Data[], int len){
+    QByteArray SentData;  // Данные, посылаемые в порт
+    quint16 crc = Crc16(Data, len);  // высчитывается контрольную сумму CRC16
+    for (int i = 0; i< len; i++){
+        SentData.append((quint8)(Data[i]));
+    }
+    SentData.append((quint8)(crc & 0xff));
+    SentData.append((quint8)(crc>>8));
+    qDebug() << "writeAndRead";
+    qDebug() << SentData.toHex().toUpper();
 
+    SentData = SentData.toHex().toUpper();  // Переводим данные в шестанцатеричный код и отправляем его
 
-    SendData.append(Data[0]);
-    SendData.append(crc);
-    SendData.append(crc>>8);
-
-
-    qDebug() << SendData.toHex();
-    SendData = SendData.toHex();
-
-//Добавить возможность отправлять помимо состояний ещё и байты.
-// Возможно что массив не обязателен, убрать его и сделать отправку путем обычной строки (quint8 вместо quint8 [])
+    // Дописать обработку исключений
 
     _SerialPort->write(":");
 
-    //_SerialPort ->write(SendData);
+    _SerialPort->write(SentData);
 
-    _SerialPort  -> write("=");
+    _SerialPort-> write("=");
 
+    _SerialPort->waitForReadyRead(1000);  // ждем 1с, пока устройство обработает данные и ответит
 
-    QByteArray data = _SerialPort -> readAll();
-    qDebug() << data;
-    return data;
+    QString data = _SerialPort->readAll();
+    data = data.left(data.indexOf('='));  // читаем данные до символа "="
+    if (data.indexOf(":")== (-1)){  // проверка данных
+        qDebug() << "Package start not found";
+    }
+    if (data.length() < 5){
+        qDebug() << "Package too short";
+    }
+    if (data.length() % 2 == 0){
+        qDebug() << "Incorrect packet length";
+    }
+
+    data = data.remove(QChar(':')); // удаляем символ ":"
+
+    //qDebug() << data;
+
+    QByteArray b_data;  // Создаем массив в котором будет храниться переведенная контрольная сумма
+    b_data.resize(data.length() / 2);
+    for (int i = 0; i < data.length() / 2; i ++ ){
+        b_data[i] =(data.mid(i*2, 2)).toInt(nullptr, 16);
+    }
+    b_data.resize(b_data.length() - 2);
+    return b_data;
 
 }
 
@@ -148,12 +166,45 @@ void ChemController :: connectToPort(){
 
 void ChemController :: ClosePort(){
      //QByteArray receivedData = writeAndRead({});
-     qDebug() << "Устройство выключено.";
+     qDebug() << "Устройство отключено.";
      _pTimerCheckConnection ->stop();
      _SerialPort -> close();
 }
+
+void ChemController ::setTemp(double temp){
+    if (isConnected())
+        {
+            commandSetTemp(temp);
+        }
+}
+
+
 
 
 bool ChemController :: isConnected() const{
     return _isConnected;
 }
+
+void ChemController ::commandSetTemp(double temp){ // Команда установить температуту
+    quint8 data[3];
+    data[0] = CMD_TSTAT_SET_TEMPER;
+    data[1] = (quint8) (temp * 32) & 0xff;
+    data[2] = ((quint8) temp * 32) >> 8;
+    QByteArray receivedData = writeAndRead(data, 3);
+    // Дописать обработку исключений
+}
+
+
+// Написать код для кнопки включения и отключения установки температуры.
+
+void ChemController ::turnOnTemp(){
+
+}
+
+
+void ChemController ::turnOffTemp(){
+
+}
+
+
+

@@ -21,15 +21,19 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void StatusBar();
+    void StatusBar(QString status);
+    void Connect();
+    void Disconnect();
+signals:
+    void SetTempRequest(double temp);
 
 private slots:
 
 private:
     Ui::MainWindow *ui;
-    QLabel *status;
-    QLabel *thermostat;
-    QLabel *reactor;
+    QLabel *_status = new QLabel(this);
+    QLabel *_thermostat = new QLabel(this) ;
+    QLabel *_reactor = new QLabel(this);
     // Устройтсво и отдельный поток, в котором он будет работать.
     QThread *_Thread;
     ChemController *_chemconroller;
