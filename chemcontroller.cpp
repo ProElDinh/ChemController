@@ -77,25 +77,31 @@ void ChemController:: OpenPort(){
     _pTimerCheckConnection->setInterval(1000);
         // соединяем чтение - прием данных
         /* По истечении времени 1 с вызывается команда запроса статуса.
-        Здесь используется именно лямбда-функция, чтобы не создавать слот.
-        Можно было бы сделать commandS private slot, но в этом случае при connect
-        через старую форму записи (на макросах SIGNAL, SLOT)
-        этот слот был бы доступен внешним объектам. */
+        Здесь используется именно лямбда-функция, чтобы не создавать слот. */
+
     connect(_pTimerCheckConnection, &QTimer::timeout, [this](){Checkconnect();});
 
     connectToPort();  // Подключаем порт
-    _pTimerCheckConnection->start();
+
 }
 
 bool ChemController:: Checkconnect(){  // Запрос статуса и проверка соединения
     QByteArray receivedData  = writeAndRead(new quint8 {CMD_NOP});
-    return true;
-    // Дописать обработку исключений
+    quint8 status = receivedData[0];
+    if (status == RESP_OK && receivedData.size() == 1){
+        //_pTimerCheckConnection->start();
+        return true;
+    } else {
+        qDebug() << "Ошибка подключения";
+        ClosePort();
+    }
+    return false;
 }
 
 QByteArray ChemController::writeAndRead(quint8 Data[], int len){
-    QByteArray SentData;  // Данные, посылаемые в порт
-    quint16 crc = Crc16(Data, len);  // высчитывается контрольную сумму CRC16
+    QByteArray SentData = 0;  // Данные, посылаемые в порт
+    quint16 crc = 0;
+    crc = Crc16(Data, len);  // высчитывается контрольную сумму CRC16
     for (int i = 0; i< len; i++){
         SentData.append((quint8)(Data[i]));
     }
@@ -151,10 +157,11 @@ void ChemController :: connectToPort(){
         if (_isConnected)
         {
             qDebug() << "Устройство подключено.";
+            _pTimerCheckConnection->start();
         }
         else
         {
-            qDebug() << "В последовательный порт устройства подключено другое устройство!";
+            qDebug() << "В последовательный порт подключено другое устройство";
         }
     }
     else
@@ -198,12 +205,14 @@ void ChemController ::commandSetTemp(double temp){ // Команда устан�
 // Написать код для кнопки включения и отключения установки температуры.
 
 void ChemController ::turnOnTemp(){
-
+    _pTimerCheckConnection->start();
+    QByteArray receivedData = writeAndRead(new quint8 {CMD_TSTAT_ENABLE});
 }
 
 
 void ChemController ::turnOffTemp(){
-
+    _pTimerCheckConnection ->stop();
+    QByteArray receivedData = writeAndRead(new quint8 {CMD_TSTAT_DISABLE});
 }
 
 

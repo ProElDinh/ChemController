@@ -21,13 +21,15 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void StatusBar(QString status);
     void Connect();
     void Disconnect();
+    void StatusBar(QString status);
+    void StatusConnected();
+    void StatusDisconnected();
 signals:
     void SetTempRequest(double temp);
 
-private slots:
+public slots:
 
 private:
     Ui::MainWindow *ui;

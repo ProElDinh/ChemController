@@ -14,24 +14,36 @@ MainWindow::MainWindow(QWidget *parent)
     основной GUI-поток. Создаем соединение: Удаляем объект прибора при окончании работы потока.*/
 
     _chemconroller->moveToThread(_Thread);
+
     connect(_Thread, SIGNAL(finished()), _chemconroller, SLOT(deleteLater()));
-    _Thread->start();  // Запускаем поток.
 
+    _Thread->start();  // Запускаем поток
     //проверка соединения
-    if (!_chemconroller -> isConnected()){
-        Disconnect();
 
+    if (!_chemconroller->isConnected()){
+        StatusDisconnected();
+    } else {
+        StatusConnected();
     }
 
 
-    connect(ui->connect, &QAction::triggered, _chemconroller, &ChemController::OpenPort); // Подключить устройство
+    connect(ui->connect, &QAction::triggered, _chemconroller, &ChemController:: OpenPort); // Подключить устройство
     connect(ui->connect, &QAction::triggered, [this](){
-            Connect();
+        StatusConnected();
+        QThread::msleep(1000);
+        if (!_chemconroller -> isConnected()) {
+            StatusDisconnected();
+            QMessageBox::critical(this, "Ошибка подключения", "Ошибка при подключении к устройству"
+                                          "\n", QMessageBox::Ok);
+        }
+
     });
-    connect(ui->disconnect, &QAction::triggered, _chemconroller, &ChemController::ClosePort);  // Отключить устройство
+    connect(ui->disconnect, &QAction::triggered, _chemconroller, &ChemController:: ClosePort);  // Отключить устройство
     connect(ui->disconnect, &QAction::triggered, [this](){
-            Disconnect();
+        StatusDisconnected();
     });
+
+
     // При нажатии на кнопку "Задать", передаются все соответствующие параметры выставленные в set_tempbox.
 
     connect(ui->set_temp, &QPushButton::clicked, [this](){
@@ -56,22 +68,41 @@ void MainWindow::StatusBar(QString status)
 }
 
 
-void MainWindow::Connect(){
-    ui->connect->setEnabled(false);
-    ui->disconnect->setEnabled(true);
-    ui -> set_temp -> setEnabled(true);
-    ui -> offTemp -> setEnabled(true);
-    ui -> OnTemp -> setEnabled(true);
-    ui -> set_tempbox -> setEnabled(true);
-    StatusBar("Подключено");
+
+
+void MainWindow::StatusConnected(){
+        ui->  connect->setEnabled(false);
+        ui->  disconnect->setEnabled(true);
+        ui -> set_temp -> setEnabled(true);
+        ui -> offTemp -> setEnabled(true);
+        ui -> OnTemp -> setEnabled(true);
+        ui -> set_tempbox -> setEnabled(true);
+        StatusBar("Подключено");
 }
 
-void MainWindow::Disconnect(){
-    ui->connect->setEnabled(true);
-    ui->disconnect->setEnabled(false);
+void MainWindow::StatusDisconnected(){
+    ui->  connect->setEnabled(true);
+    ui->  disconnect->setEnabled(false);
     ui -> set_temp -> setEnabled(false);
     ui -> offTemp -> setEnabled(false);
     ui -> OnTemp -> setEnabled(false);
     ui -> set_tempbox -> setEnabled(false);
     StatusBar("Отключено");
+}
+
+
+void MainWindow:: Connect(){
+    if (!_chemconroller->isConnected()){
+        StatusDisconnected();
+        qDebug() << "Устройство отключено";
+    } else {
+        StatusConnected();
+        qDebug() << "Устройство подключено";
+    }
+}
+
+
+void MainWindow:: Disconnect(){
+    StatusDisconnected();
+    qDebug() << "Устройство отключено";
 }

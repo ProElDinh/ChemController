@@ -12,6 +12,7 @@
 class ChemController : public QObject
 {
     Q_OBJECT
+
 public:
     explicit ChemController(QObject *parent = 0);
     ~ChemController();
