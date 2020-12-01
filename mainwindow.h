@@ -26,6 +26,7 @@ public:
     void StatusBar(QString status);
     void StatusConnected();
     void StatusDisconnected();
+    void ErrorMessage();
 signals:
     void SetTempRequest(double temp);
 

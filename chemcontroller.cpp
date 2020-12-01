@@ -93,6 +93,7 @@ bool ChemController:: Checkconnect(){  // Запрос статуса и про�
         return true;
     } else {
         qDebug() << "Ошибка подключения";
+        emit wrongConnect(); //Вызов сингнала об ошибке подключения
         ClosePort();
     }
     return false;

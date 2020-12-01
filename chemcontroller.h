@@ -17,6 +17,8 @@ public:
     explicit ChemController(QObject *parent = 0);
     ~ChemController();
     bool isConnected() const;
+signals:
+    void wrongConnect(); // сигнал об ошибке подключения
 public slots:
     void OpenPort();
     void ClosePort();

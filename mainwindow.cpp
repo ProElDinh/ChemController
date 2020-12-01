@@ -18,14 +18,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(_Thread, SIGNAL(finished()), _chemconroller, SLOT(deleteLater()));
 
     _Thread->start();  // Запускаем поток
+
     //проверка соединения
 
     if (!_chemconroller->isConnected()){
         StatusDisconnected();
-    } else {
-        StatusConnected();
     }
-
 
     connect(ui->connect, &QAction::triggered, _chemconroller, &ChemController:: OpenPort); // Подключить устройство
     connect(ui->connect, &QAction::triggered, [this](){
@@ -33,11 +31,10 @@ MainWindow::MainWindow(QWidget *parent)
         QThread::msleep(1000);
         if (!_chemconroller -> isConnected()) {
             StatusDisconnected();
-            QMessageBox::critical(this, "Ошибка подключения", "Ошибка при подключении к устройству"
-                                          "\n", QMessageBox::Ok);
         }
 
     });
+
     connect(ui->disconnect, &QAction::triggered, _chemconroller, &ChemController:: ClosePort);  // Отключить устройство
     connect(ui->disconnect, &QAction::triggered, [this](){
         StatusDisconnected();
@@ -49,7 +46,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->set_temp, &QPushButton::clicked, [this](){
             emit SetTempRequest(ui->set_tempbox->value());
     });
+
+    // Подключение сигналов
+
     connect(this, &MainWindow::SetTempRequest, _chemconroller, &ChemController::setTemp);
+
+    connect(_chemconroller,&ChemController::wrongConnect, this, &MainWindow::ErrorMessage); // Подключение сигнала
 
 }
 MainWindow::~MainWindow()
@@ -105,4 +107,9 @@ void MainWindow:: Connect(){
 void MainWindow:: Disconnect(){
     StatusDisconnected();
     qDebug() << "Устройство отключено";
+}
+
+void MainWindow::ErrorMessage(){
+    QMessageBox::critical(this, "Ошибка подключения", "Ошибка при подключении к устройству"
+                                  "\n", QMessageBox::Ok);
 }
