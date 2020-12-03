@@ -16,31 +16,40 @@ class ChemController : public QObject
 public:
     explicit ChemController(QObject *parent = 0);
     ~ChemController();
-    bool isConnected() const;
+    bool isConnected() const; // Команда для определения состояния порта
 signals:
-    void wrongConnect(); // сигнал об ошибке подключения
+    void error_(QString err);//Сигнал ошибок порта
+
+
 public slots:
     void OpenPort();
     void ClosePort();
-    void turnOnTemp();
-    void turnOffTemp();
-    void setTemp(double temp); // Задать температуру
+    void turnOnTemp(); // Команда включить установку температуры
+    void turnOffTemp(); // Команда отключить установку температуры
+    void setTemp(double temp); // Команда чтобы задать температуру
+
 private:
     bool Checkconnect();
-    void connectToPort();  // Функция подключения.
+    void connectToPort(); //  Команда подключение к порту
+    bool _isConnected;  //  Команда проверка подключения устройства
+    void commandSetTemp(double temp); //Установка температуры
+
+    // Функция подключения.
     QByteArray writeAndRead(quint8 _SendData[], int len = 1);  // реализация протокола чтения с устройством
+
+
     quint16* Crc16Table;
     quint16 Crc16(quint8 pcBlock[], int len);
     QSerialPort *_SerialPort;
     QTimer *_pTimerCheckConnection;
-    bool _isConnected;  // Проверка подключения устройства
 
-    void commandSetTemp(double temp);
+
 
     const quint8 RESP_OK = 0x01; // Все ок.
-    const quint8 RESP_ERROR = 0xFF;
+    const quint8 RESP_ERROR = 0xFF; // Ошибка подключения
 
     const quint8 CMD_NOP = 0x00; // Команда запрос статуса
+
     const quint8 CMD_READ_TADC_VAL = 0x50;
     const quint8 CMD_READ_ADCPRESS_VAL = 0x51;
 

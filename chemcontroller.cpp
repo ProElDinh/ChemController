@@ -86,21 +86,53 @@ void ChemController:: OpenPort(){
 }
 
 bool ChemController:: Checkconnect(){  // Запрос статуса и проверка соединения
-    QByteArray receivedData  = writeAndRead(new quint8 {CMD_NOP});
+    QByteArray receivedData  = writeAndRead(new quint8 {CMD_NOP},1);
     quint8 status = receivedData[0];
     if (status == RESP_OK && receivedData.size() == 1){
         //_pTimerCheckConnection->start();
         return true;
     } else {
         qDebug() << "Ошибка подключения";
-        emit wrongConnect(); //Вызов сингнала об ошибке подключения
+        emit error_("\r\r\rОшибка при подключении к устройству!\r\r\r\n\n\t\r\rПотеряна связь"); //Вызов сингнала об ошибке подключения
         ClosePort();
     }
     return false;
 }
 
+
+void ChemController :: connectToPort(){
+    if (_SerialPort->open(QSerialPort::ReadWrite))
+    {
+        // Убеждаемся, что в последовательный порт подключен именно в нужное устройство.
+        _isConnected = Checkconnect();
+        if (_isConnected)
+        {
+            qDebug() << "Устройство подключено.";
+            //_pTimerCheckConnection->start(); // Запускаем постоянный запрос данных
+        }
+        else
+        {
+            qDebug() << "В последовательный порт подключено другое устройство";
+            emit error_("\r\r\rВ последовательный порт подключено другое устройство.\r\r\r");
+        }
+    }
+    else
+    {
+        emit error_("\r\r\rПоследовательный порт не подключен.\r\r\r");
+        _isConnected = false;
+    }
+}
+
+void ChemController :: ClosePort(){
+     //QByteArray receivedData = writeAndRead({});
+     qDebug() << "Устройство отключено.";
+     _pTimerCheckConnection ->stop();
+     _SerialPort -> close();
+}
+
+
 QByteArray ChemController::writeAndRead(quint8 Data[], int len){
-    QByteArray SentData = 0;  // Данные, посылаемые в порт
+    QByteArray SentData = "";  // Данные, посылаемые в порт
     quint16 crc = 0;
     crc = Crc16(Data, len);  // высчитывается контрольную сумму CRC16
     for (int i = 0; i< len; i++){
@@ -136,7 +168,6 @@ QByteArray ChemController::writeAndRead(quint8 Data[], int len){
     }
 
     data = data.remove(QChar(':')); // удаляем символ ":"
-
     //qDebug() << data;
 
     QByteArray b_data;  // Создаем массив в котором будет храниться переведенная контрольная сумма
@@ -145,45 +176,21 @@ QByteArray ChemController::writeAndRead(quint8 Data[], int len){
         b_data[i] =(data.mid(i*2, 2)).toInt(nullptr, 16);
     }
     b_data.resize(b_data.length() - 2);
+    qDebug() << b_data;
     return b_data;
 
 }
 
 
-void ChemController :: connectToPort(){
-    if (_SerialPort->open(QSerialPort::ReadWrite))
-    {
-        // Убеждаемся, что в последовательный порт подключен именно в нужное устройство.
-        _isConnected = Checkconnect();
-        if (_isConnected)
-        {
-            qDebug() << "Устройство подключено.";
-            _pTimerCheckConnection->start();
-        }
-        else
-        {
-            qDebug() << "В последовательный порт подключено другое устройство";
-        }
-    }
-    else
-    {
-        qDebug() << "Последовательный порт не подключен.";
-        _isConnected = false;
-    }
-}
-
-void ChemController :: ClosePort(){
-     //QByteArray receivedData = writeAndRead({});
-     qDebug() << "Устройство отключено.";
-     _pTimerCheckConnection ->stop();
-     _SerialPort -> close();
-}
 
 void ChemController ::setTemp(double temp){
     if (isConnected())
         {
             commandSetTemp(temp);
         }
+    else{
+            emit error_("\r\r\rУстройство отключено.\r\r\r");
+    }
 }
 
 
@@ -200,20 +207,41 @@ void ChemController ::commandSetTemp(double temp){ // Команда устан�
     data[2] = ((quint8) temp * 32) >> 8;
     QByteArray receivedData = writeAndRead(data, 3);
     // Дописать обработку исключений
+    if (receivedData.size() != 1){ // size = 2
+        emit error_("Ошибка. Ответ не соответствует ожиданиям.");
+    }
 }
 
 
 // Написать код для кнопки включения и отключения установки температуры.
 
 void ChemController ::turnOnTemp(){
-    _pTimerCheckConnection->start();
     QByteArray receivedData = writeAndRead(new quint8 {CMD_TSTAT_ENABLE});
+    quint8 status = 0;
+    status = receivedData[0];
+    if (receivedData.size() == 1 && status == RESP_OK){ //  size = 2
+        _pTimerCheckConnection->start();
+        qDebug() << "Установка температуры включена";
+    }
+    else {
+        emit error_( "Ошибка. Ответ не соответствует ожиданиям.");
+
+    }
 }
 
 
 void ChemController ::turnOffTemp(){
-    _pTimerCheckConnection ->stop();
     QByteArray receivedData = writeAndRead(new quint8 {CMD_TSTAT_DISABLE});
+    quint8 status = 0;
+    status = receivedData[0];
+
+   if (receivedData.size() == 1 && status == RESP_OK){ //  size = 2
+        _pTimerCheckConnection ->stop();
+        qDebug() << "Установка температуры выключена";
+   }
+   else {
+        emit error_( "Ошибка. Ответ не соответствует ожиданиям.");
+   }
 }
 
 

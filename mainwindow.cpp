@@ -40,6 +40,15 @@ MainWindow::MainWindow(QWidget *parent)
         StatusDisconnected();
     });
 
+    connect(ui->OnTemp, &QPushButton::clicked, _chemconroller, &ChemController::turnOnTemp);
+    connect(ui->OnTemp, &QPushButton::clicked, [this](){
+        ui->set_temp -> setEnabled(true);
+    });
+
+    connect(ui->OffTemp, &QPushButton::clicked, _chemconroller, &ChemController::turnOffTemp);
+    connect(ui->OffTemp, &QPushButton::clicked, [this](){
+        ui->set_temp -> setEnabled(false);
+    });
 
     // При нажатии на кнопку "Задать", передаются все соответствующие параметры выставленные в set_tempbox.
 
@@ -51,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(this, &MainWindow::SetTempRequest, _chemconroller, &ChemController::setTemp);
 
-    connect(_chemconroller,&ChemController::wrongConnect, this, &MainWindow::ErrorMessage); // Подключение сигнала
+    connect(_chemconroller,&ChemController::error_, this, &MainWindow::ErrorMessage); // Подключение сигнала
 
 }
 MainWindow::~MainWindow()
@@ -75,10 +84,11 @@ void MainWindow::StatusBar(QString status)
 void MainWindow::StatusConnected(){
         ui->  connect->setEnabled(false);
         ui->  disconnect->setEnabled(true);
-        ui -> set_temp -> setEnabled(true);
-        ui -> offTemp -> setEnabled(true);
+        ui -> set_temp -> setEnabled(false);
+        ui -> OffTemp -> setEnabled(true);
         ui -> OnTemp -> setEnabled(true);
         ui -> set_tempbox -> setEnabled(true);
+        ui -> setport -> setEnabled(false);
         StatusBar("Подключено");
 }
 
@@ -86,9 +96,10 @@ void MainWindow::StatusDisconnected(){
     ui->  connect->setEnabled(true);
     ui->  disconnect->setEnabled(false);
     ui -> set_temp -> setEnabled(false);
-    ui -> offTemp -> setEnabled(false);
+    ui -> OffTemp -> setEnabled(false);
     ui -> OnTemp -> setEnabled(false);
     ui -> set_tempbox -> setEnabled(false);
+    ui -> setport -> setEnabled(true);
     StatusBar("Отключено");
 }
 
@@ -109,7 +120,7 @@ void MainWindow:: Disconnect(){
     qDebug() << "Устройство отключено";
 }
 
-void MainWindow::ErrorMessage(){
-    QMessageBox::critical(this, "Ошибка подключения", "Ошибка при подключении к устройству"
-                                  "\n", QMessageBox::Ok);
+void MainWindow::ErrorMessage(QString err){
+    QMessageBox::critical(this,
+                        "Ошибка подключения", err, QMessageBox::Ok);
 }
