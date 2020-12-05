@@ -27,6 +27,7 @@ public slots:
     void turnOnTemp(); // Команда включить установку температуры
     void turnOffTemp(); // Команда отключить установку температуры
     void setTemp(double temp); // Команда чтобы задать температуру
+    void printHello();
 
 private:
     bool Checkconnect();

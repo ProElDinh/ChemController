@@ -6,7 +6,10 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
 
+
     ui->setupUi(this);
+
+
     _Thread = new QThread(this);
     // Указывать родителя нет необходимости. Родителем станет поток, когда переместим в него объект прибора.
     _chemconroller = new ChemController;

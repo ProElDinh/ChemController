@@ -245,4 +245,6 @@ void ChemController ::turnOffTemp(){
 }
 
 
-
+void ChemController:: printHello(){
+    qDebug() << "Hi";
+}
