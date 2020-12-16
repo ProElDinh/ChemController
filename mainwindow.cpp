@@ -10,17 +10,17 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
 
-    _Thread = new QThread(this);
+    //_Thread = new QThread(this);
     // Указывать родителя нет необходимости. Родителем станет поток, когда переместим в него объект прибора.
     _chemconroller = new ChemController;
         /* Перемещаем объект прибора в отдельный поток, чтобы синхронные ожидающие операции не блокировали
     основной GUI-поток. Создаем соединение: Удаляем объект прибора при окончании работы потока.*/
 
-    _chemconroller->moveToThread(_Thread);
+    //_chemconroller->moveToThread(_Thread);
 
-    connect(_Thread, SIGNAL(finished()), _chemconroller, SLOT(deleteLater()));
+    //connect(_Thread, SIGNAL(finished()), _chemconroller, SLOT(deleteLater()));
 
-    _Thread->start();  // Запускаем поток
+    //_Thread->start();  // Запускаем поток
 
     //проверка соединения
 
@@ -28,15 +28,8 @@ MainWindow::MainWindow(QWidget *parent)
         StatusDisconnected();
     }
 
-    connect(ui->connect, &QAction::triggered, _chemconroller, &ChemController:: OpenPort); // Подключить устройство
-    connect(ui->connect, &QAction::triggered, [this](){
-        StatusConnected();
-        QThread::msleep(1000);
-        if (!_chemconroller -> isConnected()) {
-            StatusDisconnected();
-        }
+    connect(ui->connect, &QAction::triggered, this, &MainWindow:: Connect); // Подключить устройство
 
-    });
 
     connect(ui->disconnect, &QAction::triggered, _chemconroller, &ChemController:: ClosePort);  // Отключить устройство
     connect(ui->disconnect, &QAction::triggered, [this](){
@@ -52,6 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->OffTemp, &QPushButton::clicked, [this](){
         ui->set_temp -> setEnabled(false);
     });
+    connect(ui->OpenScript, &QAction::triggered, _chemconroller, &ChemController::OpenPython);
 
     // При нажатии на кнопку "Задать", передаются все соответствующие параметры выставленные в set_tempbox.
 
@@ -68,8 +62,8 @@ MainWindow::MainWindow(QWidget *parent)
 }
 MainWindow::~MainWindow()
 {
-    _Thread->quit();
-    _Thread->wait(1000);
+    //_Thread->quit();
+    //_Thread->wait(1000);
     delete ui;
 
 }
@@ -103,17 +97,17 @@ void MainWindow::StatusDisconnected(){
     ui -> OnTemp -> setEnabled(false);
     ui -> set_tempbox -> setEnabled(false);
     ui -> setport -> setEnabled(true);
+    ui -> tab_4 -> setEnabled(false);
     StatusBar("Отключено");
 }
 
 
 void MainWindow:: Connect(){
-    if (!_chemconroller->isConnected()){
-        StatusDisconnected();
-        qDebug() << "Устройство отключено";
-    } else {
+    try {
+        _chemconroller -> OpenPort();
         StatusConnected();
-        qDebug() << "Устройство подключено";
+    }  catch (...) {
+        ErrorMessage("Ошибка подключения");
     }
 }
 

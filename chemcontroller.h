@@ -1,6 +1,5 @@
 #ifndef CHEMCONTROLLER_H
 #define CHEMCONTROLLER_H
-
 #include <QObject>
 #include <QSerialPort>
 #include <QSerialPortInfo>
@@ -8,6 +7,17 @@
 #include <QDebug>
 #include <QThread>
 #include <QTimer>
+#include <exception>
+#include <string>
+class ChemException: public std::runtime_error{
+public:
+    ChemException(const std::string error): std::runtime_error(error){
+
+
+    }
+
+};
+
 
 class ChemController : public QObject
 {
@@ -22,17 +32,18 @@ signals:
 
 
 public slots:
+    void Connect();
     void OpenPort();
     void ClosePort();
     void turnOnTemp(); // Команда включить установку температуры
     void turnOffTemp(); // Команда отключить установку температуры
     void setTemp(double temp); // Команда чтобы задать температуру
-    void printHello();
+    void OpenPython();
 
 private:
     bool Checkconnect();
     void connectToPort(); //  Команда подключение к порту
-    bool _isConnected;  //  Команда проверка подключения устройства
+    bool _isConnected = false;  //  Команда проверка подключения устройства
     void commandSetTemp(double temp); //Установка температуры
 
     // Функция подключения.

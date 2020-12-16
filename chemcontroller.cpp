@@ -1,5 +1,6 @@
 #include "chemcontroller.h"
 
+// ДОБАВИТЬ ИСКЛЮЧЕНИЯ
 ChemController::ChemController(QObject *parent) : QObject(parent)
 {
     /*
@@ -77,24 +78,48 @@ void ChemController:: OpenPort(){
     _pTimerCheckConnection->setInterval(1000);
         // соединяем чтение - прием данных
         /* По истечении времени 1 с вызывается команда запроса статуса.
+         *
         Здесь используется именно лямбда-функция, чтобы не создавать слот. */
 
-    connect(_pTimerCheckConnection, &QTimer::timeout, [this](){Checkconnect();});
-
-    connectToPort();  // Подключаем порт
+    try {
+        connect(_pTimerCheckConnection, &QTimer::timeout, [this](){
+            try {
+                Checkconnect();
+            }  catch (...) {
+                ClosePort();
+                _isConnected = false; // Попробовать добавить искл.
+            };});
+        connectToPort();  // Подключаем порт
+        _pTimerCheckConnection->start();
+    }  catch (...) {
+        ClosePort();
+        throw ChemException("error connect");
+    }
 
 }
 
+
+
 bool ChemController:: Checkconnect(){  // Запрос статуса и проверка соединения
-    QByteArray receivedData  = writeAndRead(new quint8 {CMD_NOP},1);
-    quint8 status = receivedData[0];
+    QByteArray receivedData = "";
+    quint8 data[1];
+    data[0] = CMD_NOP;
+    quint8 status;
+    try{
+        qDebug() << "Checkconnect";
+        receivedData  = writeAndRead(data,1);
+        status = receivedData[0];
+    }
+    catch (ChemException &err){
+        qDebug() << "Ответ не соответствует ожиданию.";
+        throw ChemException(err);
+    }
     if (status == RESP_OK && receivedData.size() == 1){
         //_pTimerCheckConnection->start();
         return true;
     } else {
-        qDebug() << "Ошибка подключения";
-        emit error_("\r\r\rОшибка при подключении к устройству!\r\r\r\n\n\t\r\rПотеряна связь"); //Вызов сингнала об ошибке подключения
-        ClosePort();
+        qDebug() << "Ошибка при подключении к устройству!";
+        throw ChemException("Ошибка при подключении к устройству!");
     }
     return false;
 }
@@ -104,24 +129,41 @@ void ChemController :: connectToPort(){
     if (_SerialPort->open(QSerialPort::ReadWrite))
     {
         // Убеждаемся, что в последовательный порт подключен именно в нужное устройство.
-        _isConnected = Checkconnect();
+        try {
+             _isConnected = Checkconnect();
+             qDebug() << "Проверка соединения";
+        }  catch (...) {
+            qDebug() << "Нет Соединения";
+            throw ChemException("Нет соединения");
+        }
         if (_isConnected)
         {
             qDebug() << "Устройство подключено.";
-            //_pTimerCheckConnection->start(); // Запускаем постоянный запрос данных
         }
         else
         {
             qDebug() << "В последовательный порт подключено другое устройство";
-            emit error_("\r\r\rВ последовательный порт подключено другое устройство.\r\r\r");
+            throw ChemException("В последовательный порт подключено другое устройство");
         }
     }
     else
     {
-        emit error_("\r\r\rПоследовательный порт не подключен.\r\r\r");
+        qDebug() << "Последовательный порт не подключен.";
         _isConnected = false;
+        throw ChemException("Последовательный порт не подключен.");
     }
 }
+
+
+void ChemController:: Connect(){
+    try {
+        OpenPort();
+    }  catch (...) {
+        error_("Ошибка подключения");
+    }
+
+}
+
 
 void ChemController :: ClosePort(){
      //QByteArray receivedData = writeAndRead({});
@@ -159,12 +201,15 @@ QByteArray ChemController::writeAndRead(quint8 Data[], int len){
     data = data.left(data.indexOf('='));  // читаем данные до символа "="
     if (data.indexOf(":")== (-1)){  // проверка данных
         qDebug() << "Package start not found";
+        throw ChemException("Package start not found");
     }
     if (data.length() < 5){
         qDebug() << "Package too short";
+        throw ChemException("Package too short");
     }
     if (data.length() % 2 == 0){
         qDebug() << "Incorrect packet length";
+        throw ChemException("Incorrect packet length");
     }
 
     data = data.remove(QChar(':')); // удаляем символ ":"
@@ -189,7 +234,9 @@ void ChemController ::setTemp(double temp){
             commandSetTemp(temp);
         }
     else{
-            emit error_("\r\r\rУстройство отключено.\r\r\r");
+            qDebug() << "Устройство отключено.";
+            //emit error_("\r\r\rУстройство отключено.\r\r\r");
+            throw ChemException("Устройство отключено");
     }
 }
 
@@ -205,46 +252,79 @@ void ChemController ::commandSetTemp(double temp){ // Команда устан�
     data[0] = CMD_TSTAT_SET_TEMPER;
     data[1] = (quint8) (temp * 32) & 0xff;
     data[2] = ((quint8) temp * 32) >> 8;
-    QByteArray receivedData = writeAndRead(data, 3);
+    QByteArray receivedData = "";
+    try {
+        qDebug() << "Установка температуры";
+        receivedData = writeAndRead(data, 3);
+    }  catch (ChemException &err) {
+        qDebug() << "Установка температуры произошло неудачно";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+
+    }
     // Дописать обработку исключений
     if (receivedData.size() != 1){ // size = 2
-        emit error_("Ошибка. Ответ не соответствует ожиданиям.");
+        //emit error_( "Ошибка. Ответ не соответствует ожиданиям.");
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+
     }
 }
 
 
-// Написать код для кнопки включения и отключения установки температуры.
-
 void ChemController ::turnOnTemp(){
-    QByteArray receivedData = writeAndRead(new quint8 {CMD_TSTAT_ENABLE});
-    quint8 status = 0;
-    status = receivedData[0];
+    quint8 data[1];
+    data[0] = CMD_TSTAT_ENABLE;
+    QByteArray receivedData;
+    quint8 status;
+    try {
+        qDebug() << "Включение термостата";
+        receivedData = writeAndRead(data, 1);
+        status = receivedData[0];
+    }  catch (ChemException &err) {
+        qDebug() << "Включение термостата произошло неудачно";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+
+    }
+
+
     if (receivedData.size() == 1 && status == RESP_OK){ //  size = 2
         _pTimerCheckConnection->start();
-        qDebug() << "Установка температуры включена";
+        qDebug() << "Термостат включен";
     }
     else {
-        emit error_( "Ошибка. Ответ не соответствует ожиданиям.");
-
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
     }
 }
 
 
 void ChemController ::turnOffTemp(){
-    QByteArray receivedData = writeAndRead(new quint8 {CMD_TSTAT_DISABLE});
-    quint8 status = 0;
-    status = receivedData[0];
+    quint8 data[1];
+    data[0] = CMD_TSTAT_DISABLE;
+    QByteArray receivedData = "";
+    quint8 status;
+    try {
+        qDebug() << "Отключение термастата";
+        receivedData = writeAndRead(data, 1);
+        status = receivedData[0];
+    }  catch (ChemException &err) {
+        qDebug() << "Отключение термостат произошло неудачно";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+
 
    if (receivedData.size() == 1 && status == RESP_OK){ //  size = 2
-        _pTimerCheckConnection ->stop();
-        qDebug() << "Установка температуры выключена";
+        qDebug() << "Термостат выключен";
    }
    else {
-        emit error_( "Ошибка. Ответ не соответствует ожиданиям.");
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        //emit error_( "Ошибка. Ответ не соответствует ожиданиям.");
    }
 }
 
+void ChemController::OpenPython(){
+    system("E:/ChemControllerGUI/test.py");
 
-void ChemController:: printHello(){
-    qDebug() << "Hi";
+
 }
