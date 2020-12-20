@@ -32,20 +32,27 @@ signals:
 
 
 public slots:
-    void Connect();
     void OpenPort();
     void ClosePort();
     void turnOnTemp(); // Команда включить установку температуры
     void turnOffTemp(); // Команда отключить установку температуры
     void setTemp(double temp); // Команда чтобы задать температуру
     void OpenPython();
+    qreal GetADCTemper(int id);  // Команда для запроса АЦП термометра
+    qreal GetADCPress(int id);  // Команда для запроса АЦП пресса
+    qreal GetTemper(int id);  // Получить температуру данного термометра
+    qreal GetSuppTemper();
+    void TStatSetTCoeffs(int id, qreal k, qreal b);  // Установить коэффициенты для преобразования кода АЦП в температуру
+    int TStatGetPower();  // Команда для запроса мощности устройства
+    bool TStatGetStatus();  // Запрос состояния термостата
+    void TStatSetPWM(qint16 val);
 
 private:
-    bool Checkconnect();
-    void connectToPort(); //  Команда подключение к порту
-    bool _isConnected = false;  //  Команда проверка подключения устройства
-    void commandSetTemp(double temp); //Установка температуры
-
+    bool Checkconnect();   // Проверка соединения с устройством
+    void connectToPort(); // Команда подключение к порту
+    bool _isConnected = false;  // Команда проверка подключения устройства
+    void commandSetTemp(double temp); // Установка температуры
+    qreal BitConvent(QByteArray data, int startoffset);  // Команда для расшифровки данных из устройства
     // Функция подключения.
     QByteArray writeAndRead(quint8 _SendData[], int len = 1);  // реализация протокола чтения с устройством
 
@@ -62,16 +69,16 @@ private:
 
     const quint8 CMD_NOP = 0x00; // Команда запрос статуса
 
-    const quint8 CMD_READ_TADC_VAL = 0x50;
-    const quint8 CMD_READ_ADCPRESS_VAL = 0x51;
+    const quint8 CMD_READ_TADC_VAL = 0x50;  // Получить значение АЦП термометра
+    const quint8 CMD_READ_ADCPRESS_VAL = 0x51;  //
 
-    const quint8 CMD_READ_TEMPER = 0x20;
+    const quint8 CMD_READ_TEMPER = 0x20;  // Прочитать температуру данного термостата
     const quint8 CMD_TSTAT_ENABLE = 0x25;
     const quint8 CMD_TSTAT_DISABLE = 0x26;
-    const quint8 CMD_TSTAT_SET_PWM = 0x27;
+    const quint8 CMD_TSTAT_SET_PWM = 0x27;  // Получить мощность
     const quint8 CMD_TSTAT_SET_PID = 0x28;
-    const quint8 CMD_TSTAT_SET_TEMPER = 0x29;
-    const quint8 CMD_SET_TCOEFFS = 0x30;
+    const quint8 CMD_TSTAT_SET_TEMPER = 0x29;  // Установить температуту
+    const quint8 CMD_SET_TCOEFFS = 0x30;  // // Установить коэффициенты для преобразования кода АЦП в температуру
     const quint8 CMD_TSTAT_GET_PWR = 0x31;
     const quint8 CMD_TSTAT_GET_STATE = 0x32;      //получить состояние термостата (On/Off)
     const quint8 CMD_TSTAT_GET_SUPP_TPR = 0x33;   //получить поддерживаемую температуру

@@ -23,10 +23,9 @@ public:
     ~MainWindow();
     void Connect();
     void Disconnect();
-    void StatusBar(QString status);
-    void StatusConnected();
-    void StatusDisconnected();
-    void ErrorMessage(QString err);
+    void TurnOnTemp();
+    void TurnOffTemp();
+
 signals:
     void SetTempRequest(double temp);
 
@@ -40,6 +39,10 @@ private:
     // Устройтсво и отдельный поток, в котором он будет работать.
     QThread *_Thread;
     ChemController *_chemconroller;
+    void StatusConnected();
+    void StatusDisconnected();
+    void StatusBar(QString status);
+    void ErrorMessage(QString err);
 
 };
 

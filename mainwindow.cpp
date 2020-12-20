@@ -31,20 +31,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->connect, &QAction::triggered, this, &MainWindow:: Connect); // Подключить устройство
 
 
-    connect(ui->disconnect, &QAction::triggered, _chemconroller, &ChemController:: ClosePort);  // Отключить устройство
-    connect(ui->disconnect, &QAction::triggered, [this](){
-        StatusDisconnected();
-    });
+    connect(ui->disconnect, &QAction::triggered, this, &MainWindow:: Disconnect);  // Отключить устройство
 
-    connect(ui->OnTemp, &QPushButton::clicked, _chemconroller, &ChemController::turnOnTemp);
-    connect(ui->OnTemp, &QPushButton::clicked, [this](){
-        ui->set_temp -> setEnabled(true);
-    });
 
-    connect(ui->OffTemp, &QPushButton::clicked, _chemconroller, &ChemController::turnOffTemp);
-    connect(ui->OffTemp, &QPushButton::clicked, [this](){
-        ui->set_temp -> setEnabled(false);
-    });
+    connect(ui->OnTemp, &QPushButton::clicked, this, &MainWindow::TurnOnTemp);
+
+
+    connect(ui->OffTemp, &QPushButton::clicked, this, &MainWindow::TurnOffTemp);
+
     connect(ui->OpenScript, &QAction::triggered, _chemconroller, &ChemController::OpenPython);
 
     // При нажатии на кнопку "Задать", передаются все соответствующие параметры выставленные в set_tempbox.
@@ -113,8 +107,28 @@ void MainWindow:: Connect(){
 
 
 void MainWindow:: Disconnect(){
+    _chemconroller-> ClosePort();
     StatusDisconnected();
-    qDebug() << "Устройство отключено";
+}
+
+void MainWindow::TurnOnTemp(){
+    try {
+        _chemconroller->turnOnTemp();
+        ui->set_temp -> setEnabled(true);
+    }  catch (...) {
+        ErrorMessage("Ошибка. Неудалось включить термостат!");
+    }
+
+}
+
+void MainWindow::TurnOffTemp(){
+    try {
+        _chemconroller-> turnOffTemp();
+        ui->set_temp -> setEnabled(false);
+    }  catch (...) {
+        ErrorMessage("Ошибка. Неудалось включить термостат!");
+    }
+
 }
 
 void MainWindow::ErrorMessage(QString err){
