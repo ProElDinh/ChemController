@@ -9,7 +9,7 @@ SysConfig::SysConfig(){
 
 
 }
-void SysConfig::Save(QString filePath){
+void DevSettings::Save(QString filePath){
     QFile file(filePath);
     if (file.open(QIODevice::WriteOnly)) {
         QTextStream out(&file); // поток записываемых данных направляем в файл
@@ -30,7 +30,7 @@ void SysConfig::Save(QString filePath){
     file.close();
 }
 
-void SysConfig::Load(const QString filePath){
+void DevSettings::Load(const QString filePath){
 
     QFile file(filePath);
    if(!file.open(QFile::ReadOnly | QFile::Text)){  // Проверяем есть ли файл и можно ли его открыть
@@ -52,7 +52,7 @@ void SysConfig::Load(const QString filePath){
 }
 
 
-void SysConfig::ParseLine(QString line){
+void DevSettings::ParseLine(QString line){
     QStringList tp = line.split('=');
     if (tp.length()!= 2){
         qDebug() << "Неправильный формат \"" + line + "\"";
@@ -111,7 +111,7 @@ void SysConfig::ParseLine(QString line){
 
 
 
-void DevSettings::Save(const QString filePath){
+void SysConfig::Save(const QString filePath){
     QFile file(filePath);
     if (file.open(QIODevice::WriteOnly)) {
         QTextStream out(&file); // поток записываемых данных направляем в файл
@@ -168,7 +168,7 @@ void DevSettings::Save(const QString filePath){
 
 }
 
-void DevSettings::Load(const QString filePath){
+void SysConfig::Load(const QString filePath){
 
     QFile mFile(filePath);
    if(!mFile.open(QFile::ReadOnly | QFile::Text)){  // Проверяем есть ли файл и можно ли его открыть
@@ -190,7 +190,7 @@ void DevSettings::Load(const QString filePath){
 }
 
 
-void DevSettings::ParseLine(QString line){
+void SysConfig::ParseLine(QString line){
     QStringList tp = line.split('=');
     if (tp.length()!= 2){
         qDebug() << "Неправильный формат \"" + line + "\"";

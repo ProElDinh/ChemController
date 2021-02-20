@@ -31,7 +31,7 @@ public:
 
 public slots:
     void OpenPort();
-
+    bool IsOpen();
     void ClosePort();
     void CheckConnect();   // Проверка соединения с устройством
     void TStatEnable(); // Команда включить установку температуры

@@ -3,11 +3,16 @@
 #include <QDebug>
 #include <QString>
 #include <QFile>
-class SysConfig
+class DevSettings
 {
+private:
+    void ParseLine(QString line);
+
 public:
-    SysConfig();
-    ~SysConfig();
+    DevSettings();
+    ~DevSettings();
+    void Load(QString path);
+    void Save(QString path);
     QString COM_PORT;
     qreal TStat_Kp;
     qreal TStat_Ki;
@@ -17,18 +22,18 @@ public:
     qreal Reac_Ki;
     qreal Reac_Kd;
     qreal Reac_A;
-    void Load(QString path);
-    void Save(QString path);
-private:
-    void ParseLine(QString line);
+
+
 };
 
 
-class DevSettings {
+class SysConfig {
+private:
+    void ParseLine(QString line);
 
 public:
-    DevSettings();
-    ~DevSettings();
+    SysConfig();
+    ~SysConfig();
     void Save(QString path);
     void Load(QString path);
     qreal TStat_K1;
@@ -71,9 +76,6 @@ public:
     int ReacCH4_Psc3;
     qreal ReacCH4_X;
     qreal ReacCH4_Y;
-
-private:
-    void ParseLine(QString line);
 
 
 };

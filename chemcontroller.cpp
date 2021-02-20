@@ -183,7 +183,10 @@ QByteArray ChemController::writeAndRead(quint8 *Data, int len){  // Функци
 
 }
 
+bool ChemController::IsOpen(){
+    return _SerialPort->isOpen();
 
+}
 
 // Получить Получить значение АЦП термометра
 // <param name="id">Номер термометра, 1 или 2</param>
@@ -848,6 +851,3 @@ bool ChemController::ReacGetCalibrFlag(){
     return status == 0 ? false : true;
 }
 
-void ChemController::OpenPython(){
-    system("E:/ChemControllerGUI/test.py");
-}
