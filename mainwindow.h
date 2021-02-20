@@ -9,7 +9,8 @@
 #include <QThread>
 
 #include "chemcontroller.h"
-
+#include <formreacsettings.h>
+#include <formtstatconfig.h>
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -25,20 +26,22 @@ public:
     void Disconnect();
     void TurnOnTemp();
     void TurnOffTemp();
-
-signals:
-    void SetTempRequest(double temp);
+    void ReacSettings();
+    void TStatConfig();
 
 public slots:
+
+private slots:
+    void on_set_tempbox_valueChanged(double arg1);
 
 private:
     Ui::MainWindow *ui;
     QLabel *_status = new QLabel(this);
     QLabel *_thermostat = new QLabel(this) ;
     QLabel *_reactor = new QLabel(this);
-    // Устройтсво и отдельный поток, в котором он будет работать.
-    QThread *_Thread;
     ChemController *_chemconroller;
+    FormReacSettings *_reacSettings;
+    FormTStatConfig * _tStatConfig;
     void StatusConnected();
     void StatusDisconnected();
     void StatusBar(QString status);

@@ -1,26 +1,16 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-
-
     ui->setupUi(this);
 
 
-    //_Thread = new QThread(this);
-    // Указывать родителя нет необходимости. Родителем станет поток, когда переместим в него объект прибора.
+
     _chemconroller = new ChemController;
-        /* Перемещаем объект прибора в отдельный поток, чтобы синхронные ожидающие операции не блокировали
-    основной GUI-поток. Создаем соединение: Удаляем объект прибора при окончании работы потока.*/
-
-    //_chemconroller->moveToThread(_Thread);
-
-    //connect(_Thread, SIGNAL(finished()), _chemconroller, SLOT(deleteLater()));
-
-    //_Thread->start();  // Запускаем поток
+    _reacSettings = new FormReacSettings;
+    _tStatConfig = new FormTStatConfig;
 
     //проверка соединения
 
@@ -30,34 +20,32 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->connect, &QAction::triggered, this, &MainWindow:: Connect); // Подключить устройство
 
-
     connect(ui->disconnect, &QAction::triggered, this, &MainWindow:: Disconnect);  // Отключить устройство
 
 
     connect(ui->OnTemp, &QPushButton::clicked, this, &MainWindow::TurnOnTemp);
 
-
     connect(ui->OffTemp, &QPushButton::clicked, this, &MainWindow::TurnOffTemp);
 
     connect(ui->OpenScript, &QAction::triggered, _chemconroller, &ChemController::OpenPython);
 
+    connect(ui->reacSetButton,&QAction::triggered, this, &MainWindow::ReacSettings);
+
+     connect(ui->TStatConfigButton,&QAction::triggered, this, &MainWindow::TStatConfig);
     // При нажатии на кнопку "Задать", передаются все соответствующие параметры выставленные в set_tempbox.
 
-    connect(ui->set_temp, &QPushButton::clicked, [this](){
-            emit SetTempRequest(ui->set_tempbox->value());
-    });
 
     // Подключение сигналов
-
-    connect(this, &MainWindow::SetTempRequest, _chemconroller, &ChemController::setTemp);
 
     connect(_chemconroller,&ChemController::error_, this, &MainWindow::ErrorMessage); // Подключение сигнала
 
 }
 MainWindow::~MainWindow()
 {
-    //_Thread->quit();
-    //_Thread->wait(1000);
+
+    delete _chemconroller;
+    delete _reacSettings;
+    delete _tStatConfig;
     delete ui;
 
 }
@@ -70,7 +58,15 @@ void MainWindow::StatusBar(QString status)
 }
 
 
+void MainWindow::ReacSettings(){
 
+    _reacSettings -> show();
+
+}
+
+void MainWindow::TStatConfig(){
+    _tStatConfig -> show();
+}
 
 void MainWindow::StatusConnected(){
         ui->  connect->setEnabled(false);
@@ -113,7 +109,7 @@ void MainWindow:: Disconnect(){
 
 void MainWindow::TurnOnTemp(){
     try {
-        _chemconroller->turnOnTemp();
+        _chemconroller->TStatEnable();
         ui->set_temp -> setEnabled(true);
     }  catch (...) {
         ErrorMessage("Ошибка. Неудалось включить термостат!");
@@ -123,7 +119,7 @@ void MainWindow::TurnOnTemp(){
 
 void MainWindow::TurnOffTemp(){
     try {
-        _chemconroller-> turnOffTemp();
+        _chemconroller-> TStatDisable();
         ui->set_temp -> setEnabled(false);
     }  catch (...) {
         ErrorMessage("Ошибка. Неудалось включить термостат!");
@@ -134,4 +130,9 @@ void MainWindow::TurnOffTemp(){
 void MainWindow::ErrorMessage(QString err){
     QMessageBox::critical(this,
                         "Ошибка подключения", err, QMessageBox::Ok);
+}
+
+void MainWindow::on_set_tempbox_valueChanged(double arg1)
+{
+    qDebug() << arg1;
 }

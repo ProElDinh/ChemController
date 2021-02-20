@@ -27,40 +27,55 @@ public:
     explicit ChemController(QObject *parent = 0);
     ~ChemController();
     bool isConnected() const; // Команда для определения состояния порта
-signals:
-    void error_(QString err);//Сигнал ошибок порта
 
 
 public slots:
     void OpenPort();
+
     void ClosePort();
-    void turnOnTemp(); // Команда включить установку температуры
-    void turnOffTemp(); // Команда отключить установку температуры
-    void setTemp(double temp); // Команда чтобы задать температуру
-    void OpenPython();
-    qreal GetADCTemper(int id);  // Команда для запроса АЦП термометра
-    qreal GetADCPress(int id);  // Команда для запроса АЦП пресса
+    void CheckConnect();   // Проверка соединения с устройством
+    void TStatEnable(); // Команда включить установку температуры
+    void TStatDisable(); // Команда отключить установку температуры
+    quint16 GetADCTemper(int id);  // Команда для запроса АЦП термометра
+    quint16 GetADCPress(int id);  // Команда для запроса АЦП пресса
     qreal GetTemper(int id);  // Получить температуру данного термометра
     qreal GetSuppTemper();
     void TStatSetTCoeffs(int id, qreal k, qreal b);  // Установить коэффициенты для преобразования кода АЦП в температуру
     int TStatGetPower();  // Команда для запроса мощности устройства
     bool TStatGetStatus();  // Запрос состояния термостата
     void TStatSetPWM(qint16 val);
-
+    void TStatSetPID(qreal kP, qreal kI, qreal kD, qreal A);
+    void TStatSetTemper(qreal temper);
+    void ReacSetPCoeffs(int ch, qreal k, qreal b);
+    bool ReacIsEnable();
+    void ReacEnable(bool val);
+    void ReacCalibration();
+    qreal ReacGetCurrPress(int ch);
+    int ReacGetSyrVol(int ch);
+    void ReacSetMotorVel(int ch, int val);
+    void ReacSyrSetMode(int ch, int mode);
+    int ReacSyrGetMode(int ch);
+    void ReacSetPID(qreal kP, qreal kI, qreal kD, qreal A);
+    void ReacSetPress(int ch, qreal val);
+    void ReacSetMaxSteps(int ch, int val);
+    int ReacGetMaxSteps(int ch);
+    void ReacSetPsc(int ch, int val);
+    int ReacGetPsc(int ch);
+    int ReacGetMotorVel(int ch);
+    qreal ReacGetSuppPress(int ch);
+    bool ReacGetCalibrFlag();
 private:
-    bool Checkconnect();   // Проверка соединения с устройством
-    void connectToPort(); // Команда подключение к порту
+    QSerialPort *_SerialPort;
+
     bool _isConnected = false;  // Команда проверка подключения устройства
-    void commandSetTemp(double temp); // Установка температуры
-    qreal BitConvent(QByteArray data, int startoffset);  // Команда для расшифровки данных из устройства
+
     // Функция подключения.
     QByteArray writeAndRead(quint8 _SendData[], int len = 1);  // реализация протокола чтения с устройством
+    qint16 BitConvent16(QByteArray data, int startoffset);  // Команда для расшифровки данных из устройства
+    qint32 BitConvent32(QByteArray data, int startoffset);
+    quint16* Crc16Table;  // Таблица контрольной суммы
+    quint16 Crc16(quint8 pcBlock[], int len);  // функция для перевода данных
 
-
-    quint16* Crc16Table;
-    quint16 Crc16(quint8 pcBlock[], int len);
-    QSerialPort *_SerialPort;
-    QTimer *_pTimerCheckConnection;
 
 
 

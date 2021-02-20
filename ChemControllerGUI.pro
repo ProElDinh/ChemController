@@ -12,14 +12,22 @@ QT += serialport
 
 SOURCES += \
     chemcontroller.cpp \
+    config.cpp \
+    formreacsettings.cpp \
+    formtstatconfig.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     chemcontroller.h \
+    config.h \
+    formreacsettings.h \
+    formtstatconfig.h \
     mainwindow.h
 
 FORMS += \
+    formreacsettings.ui \
+    formtstatconfig.ui \
     mainwindow.ui
 
 # Default rules for deployment.

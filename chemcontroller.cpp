@@ -47,6 +47,7 @@ ChemController::ChemController(QObject *parent) : QObject(parent)
             0x4400, 0x84C1, 0x8581, 0x4540, 0x8701, 0x47C0, 0x4680, 0x8641,
             0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
     };
+    _SerialPort = new QSerialPort(this);
 }
 
 ChemController::~ChemController(){
@@ -63,53 +64,37 @@ quint16 ChemController::Crc16(quint8 pcBlock[], int len) {
     return crc;
 }
 
-qreal ChemController::BitConvent(QByteArray data, int startoffset){
-    quint8 a1 =data[startoffset];
-    quint8 a2 = data[startoffset +1];
-    qint16 a = (a1) | (a2 << 8);
-    return (qreal) qRound((qreal) a *10/ 32) / 10;
+
+qint16 ChemController::BitConvent16(QByteArray data, int startoffset){
+    int first = data[startoffset];
+    int second = data[startoffset +1];
+    return (qint16) (first | (second << 8));
 
 }
 
+qint32 ChemController::BitConvent32(QByteArray data, int startoffset){
+    int first = (data[startoffset]) | (data[startoffset + 1] << 8);
+    int second = (data[startoffset + 2]) | (data[startoffset + 3] << 8);
+    return (quint32) ((quint16) first | (quint32) (second << 16));
+}
+
 void ChemController:: OpenPort(){
-    _SerialPort = new QSerialPort(this);
+    if (_SerialPort->isOpen()){
+         _SerialPort ->close();
+    }
     _SerialPort -> setPortName("com4"); // указываем параметры порта (далее)
     _SerialPort -> setBaudRate(QSerialPort::Baud57600);
     _SerialPort -> setDataBits(QSerialPort::Data8);
     _SerialPort -> setParity(QSerialPort::NoParity);
     _SerialPort -> setStopBits(QSerialPort :: OneStop);
     _SerialPort -> setFlowControl(QSerialPort:: NoFlowControl);
-        /*  При включенном приборе нужно обязательно, хотя бы раз в секунду,
-            посылать команду на запрос статуса, чтобы подтвердить, что соединение не разорвано.
-            Иначе прибор будет выключен. Для этого создаем таймер с интервалом в 1 секунду. */
-    _pTimerCheckConnection = new QTimer(this);
-    _pTimerCheckConnection->setInterval(1000);
-        // соединяем чтение - прием данных
-        /* По истечении времени 1 с вызывается команда запроса статуса.
-         *
-        Здесь используется именно лямбда-функция, чтобы не создавать слот. */
-
-    try {
-        connect(_pTimerCheckConnection, &QTimer::timeout, [this](){
-            try {
-                Checkconnect();
-            }  catch (...) {
-                ClosePort();
-                _isConnected = false;
-                error_("Потеряна связь");
-            };});
-        connectToPort();  // Подключаем порт
-        _pTimerCheckConnection->start();
-    }  catch (...) {
-        ClosePort();
-        throw ChemException("error connect");
-    }
+    _SerialPort -> open(QSerialPort::ReadWrite);
 
 }
 
 
 
-bool ChemController:: Checkconnect(){  // Запрос статуса и проверка соединения
+void ChemController:: CheckConnect(){  // Запрос статуса и проверка соединения
     QByteArray receivedData = "";
     quint8 data[1];
     data[0] = CMD_NOP;
@@ -124,53 +109,21 @@ bool ChemController:: Checkconnect(){  // Запрос статуса и про�
         throw ChemException("Ответ не соответствует ожиданию.");
     }
     if (status == RESP_OK && receivedData.size() == 1){
-        //_pTimerCheckConnection->start();
-        return true;
+        _isConnected = true;
     } else {
+        _isConnected = false;
         qDebug() << "Ошибка при подключении к устройству!";
         throw ChemException("Ошибка при подключении к устройству!");
     }
-    return false;
 }
-
-
-void ChemController :: connectToPort(){
-    if (_SerialPort->open(QSerialPort::ReadWrite))
-    {
-        // Убеждаемся, что в последовательный порт подключен именно в нужное устройство.
-        try {
-             _isConnected = Checkconnect();
-             qDebug() << "Проверка соединения";
-        }  catch (...) {
-            qDebug() << "Нет Соединения";
-            throw ChemException("Нет соединения");
-        }
-        if (_isConnected)
-        {
-            qDebug() << "Устройство подключено.";
-        }
-        else
-        {
-            qDebug() << "В последовательный порт подключено другое устройство";
-            throw ChemException("В последовательный порт подключено другое устройство");
-        }
-    }
-    else
-    {
-        qDebug() << "Последовательный порт не подключен.";
-        _isConnected = false;
-        throw ChemException("Последовательный порт не подключен.");
-    }
-}
-
-
-
 
 void ChemController :: ClosePort(){
-     //QByteArray receivedData = writeAndRead({});
      qDebug() << "Устройство отключено.";
-     _pTimerCheckConnection ->stop();
      _SerialPort -> close();
+}
+
+bool ChemController :: isConnected() const{
+    return _isConnected;
 }
 
 
@@ -232,53 +185,11 @@ QByteArray ChemController::writeAndRead(quint8 *Data, int len){  // Функци
 
 
 
-void ChemController ::setTemp(double temp){
-    if (isConnected())
-        {
-            commandSetTemp(temp);
-        }
-    else{
-            qDebug() << "Устройство отключено.";
-            //emit error_("\r\r\rУстройство отключено.\r\r\r");
-            throw ChemException("Устройство отключено");
-    }
-}
-
-
-
-
-bool ChemController :: isConnected() const{
-    return _isConnected;
-}
-
-void ChemController ::commandSetTemp(double temp){ // Команда установить температуту
-    quint8 data[3];
-    data[0] = CMD_TSTAT_SET_TEMPER;
-    data[1] = (quint8) (temp * 32) & 0xff;
-    data[2] = ((quint8) temp * 32) >> 8;
-    QByteArray receivedData = "";
-    try {
-        qDebug() << "Установка температуры";
-        receivedData = writeAndRead(data, 3);
-    }  catch (ChemException &err) {
-        qDebug() << "Установка температуры произошло неудачно";
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
-
-    }
-    // Дописать обработку исключений
-    if (receivedData.size() != 1){ // size = 2
-        //emit error_( "Ошибка. Ответ не соответствует ожиданиям.");
-        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
-
-    }
-}
-
 // Получить Получить значение АЦП термометра
 // <param name="id">Номер термометра, 1 или 2</param>
 // <returns>Значение АЦП</returns>
 
-qreal ChemController::GetADCTemper(int id){
+quint16 ChemController::GetADCTemper(int id){
     quint8 data[2];
     data[0] = CMD_READ_TADC_VAL;
     data[1] = (quint8) id;
@@ -288,17 +199,18 @@ qreal ChemController::GetADCTemper(int id){
         receivedData = writeAndRead(data, 2);
     }  catch (...) {
         qDebug() << "Произошла ошибка при запросе значения АЦП" +  QString::number(id) +"го Термометра";
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        throw ChemException("Ошибка. Ошибка подключения.");
     }
     if (receivedData.size() == 5){
-        return BitConvent(receivedData, 3);
+        quint16 num = BitConvent16(receivedData, 3);
+        return num;
     } else {
         qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
         throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
     }
 }
 
-qreal ChemController:: GetADCPress(int id){
+quint16 ChemController:: GetADCPress(int id){
     quint8 data[2];
     data[0] = CMD_READ_ADCPRESS_VAL;
     data[1] = (quint8) id;
@@ -308,10 +220,11 @@ qreal ChemController:: GetADCPress(int id){
         receivedData = writeAndRead(data, 2);
     }  catch (...) {
         qDebug() << "Произошла ошибка при запросе значения АЦП" +  QString::number(id) +"го Пресса";
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        throw ChemException("Ошибка. Ошибка подключения.");
     }
     if (receivedData.size() == 5){
-        return BitConvent(receivedData, 3);
+        quint16 num = BitConvent16(receivedData,3);
+        return num;
     } else {
         qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
         throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
@@ -335,10 +248,11 @@ qreal ChemController:: GetTemper(int id){
         receivedData = writeAndRead(data, 2);
     }  catch (...) {
         qDebug() << "Произошла ошибка при запросе температуры " +  QString::number(id) + " Термометра" ;
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        throw ChemException("Ошибка. Ошибка подключения.");
     }
     if (receivedData.size() == 5){
-        return BitConvent(receivedData, 3);
+        qint16 num =BitConvent16(receivedData,3);
+        return (qreal) qRound((num *10) / 32.0) / 10.0;
     } else {
         qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
         throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
@@ -354,10 +268,11 @@ qreal ChemController:: GetSuppTemper(){
         receivedData = writeAndRead(data, 1);
     }  catch (...) {
         qDebug() << "Произошла ошибка при запросе SuppTemper" ;
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        throw ChemException("Ошибка. Ошибка подключения.");
     }
     if (receivedData.size() == 4){
-        return BitConvent(receivedData, 2);
+        qint16 num = BitConvent16(receivedData,2);
+        return (qreal) qRound((num *10) / 32.0) / 10.0;
     } else {
         qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
         throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
@@ -388,7 +303,7 @@ void ChemController::TStatSetTCoeffs(int id, qreal k, qreal b){
         receivedData = writeAndRead(data, 18);
     }  catch (...) {
         qDebug() << "Произошла ошибка при установка коэффициенты для преобразования кода АЦП в " +   QString::number(id) + "ом Термометре";
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        throw ChemException("Ошибка. Ошибка подключения.");
     }
 
     if (receivedData.size() != 3){
@@ -407,13 +322,16 @@ int ChemController:: TStatGetPower(){
         receivedData = writeAndRead(data, 1);
     }  catch (...) {
         qDebug() << "Произошла ошибка при запросе мощности устройства";
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        throw ChemException("Ошибка. Ошибка подключения.");
     }
     if (receivedData.size() != 4) {
         qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
         throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    } else {
+        return BitConvent16(receivedData,2);
     }
-    return BitConvent(receivedData, 2);
+
+
 }
 
 bool ChemController:: TStatGetStatus(){
@@ -424,7 +342,7 @@ bool ChemController:: TStatGetStatus(){
         receiveData = writeAndRead(data, 1);
     }  catch (...) {
         qDebug() << "Произошла ошибка при запросе состояния термостата";
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        throw ChemException("Ошибка. Ошибка подключения.");
     }
 
     if (receiveData.size() != 3){
@@ -440,7 +358,7 @@ bool ChemController:: TStatGetStatus(){
 }
 
 
-void ChemController ::turnOnTemp(){
+void ChemController ::TStatEnable(){
     quint8 data[1];
     data[0] = CMD_TSTAT_ENABLE;
     QByteArray receivedData;
@@ -451,7 +369,7 @@ void ChemController ::turnOnTemp(){
         status = receivedData[0];
     }  catch (ChemException &err) {
         qDebug() << "Включение термостата произошло неудачно";
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        throw ChemException("Ошибка. Ошибка подключения.");
 
     }
 
@@ -465,7 +383,7 @@ void ChemController ::turnOnTemp(){
 }
 
 
-void ChemController ::turnOffTemp(){
+void ChemController ::TStatDisable(){
     quint8 data[1];
     data[0] = CMD_TSTAT_DISABLE;
     QByteArray receivedData = "";
@@ -476,7 +394,7 @@ void ChemController ::turnOffTemp(){
         status = receivedData[0];
     }  catch (ChemException &err) {
         qDebug() << "Отключение термостат произошло неудачно";
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        throw ChemException("Ошибка. Ошибка подключения.");
     }
 
 
@@ -503,7 +421,7 @@ void ChemController::TStatSetPWM(qint16 val){
         receiveData = writeAndRead(data, 3);
     }  catch (...) {
         qDebug() << "Произошла ошибка при установке установке значения PWM";
-        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+        throw ChemException("Ошибка. Ошибка подключения.");
     }
     if (receiveData.size() != 2){
         qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
@@ -511,7 +429,424 @@ void ChemController::TStatSetPWM(qint16 val){
     }
 }
 
+void ChemController::TStatSetPID(qreal kP, qreal kI, qreal kD, qreal A){
+    quint8 data[9];
+    QByteArray receiveData = "";
+    data[0] = CMD_TSTAT_SET_PID;  // Установить PID
+    for (int i = 0; i < 2; i++)
+    {
+        data[i + 1] = (quint8)(( (quint16) (kP * qPow(2,5)) >> (8 * i) ) & 0xFF);
+        data[i + 3] = (quint8)(( (quint16) (kI * qPow(2,5)) >> (8 * i) ) & 0xFF);
+        data[i + 5] = (quint8)(( (quint16) (kD * qPow(2,5)) >> (8 * i) ) & 0xFF);
+        data[i + 7] = (quint8)(( (quint16) (A * qPow(2,5))  >> (8 * i) ) & 0xFF);
+    }
+    try {
+        qDebug() << "Установка значение PID";
+        receiveData = writeAndRead(data, 9);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при установке установке значения PID";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size() != 2){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+}
 
+void ChemController::TStatSetTemper(qreal temper){
+    quint8 data[3];
+    QByteArray receiveData = "";
+    data[0] = CMD_TSTAT_SET_TEMPER;
+    for (int i = 0; i < 2; i++){
+       data[i + 1] = (quint8)(( (qint16) (temper * qPow(2,5)) >> (8 * i) ) & 0xFF);
+    }
+    try {
+        qDebug() << "Установка TStatSetTemper";
+        receiveData = writeAndRead(data, 3);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при установки TStatTemper";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size()!= 2){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+}
+
+void ChemController::ReacSetPCoeffs(int ch, qreal k, qreal b){
+     quint8 data[18];
+     QByteArray receiveData = "";
+     data[0] = CMD_REAC_SET_COEFF;
+     qint64 ck = (qint64) (k * qPow(2,29));
+     qint64 cb = (qint64) (b * qPow(2,29));
+     data[1] =(quint8) (ch);
+     for (int i = 0; i <8; i++){
+        data[i + 2] = (quint8)(( ck >> (8 * i)) & 0xFF);
+        data[i + 10] = (quint8)(( cb >> (8 * i)) & 0xFF);
+     }
+
+     try {
+         qDebug() << "Установка ReacPCoeffs";
+         receiveData = writeAndRead(data, 18);
+     }  catch (...) {
+        qDebug() << "Произошла ошибка при установки ReacPCoeffs";
+         throw ChemException("Ошибка. Ошибка подключения.");
+     }
+     if (receiveData.size()!= 3){
+         qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+         throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+     }
+
+
+}
+
+bool ChemController::ReacIsEnable(){
+    quint8 data[1];
+    data[0] = CMD_REAC_GET_STATE;
+    QByteArray receiveData = "";
+    quint8 status;
+    try {
+        qDebug() << "Проверка Состояния Реактора";
+        receiveData = writeAndRead(data);
+        status = receiveData[2];
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при проверки состояния Реактора";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size()!= 3){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+    return status == 0 ? false : true;
+}
+
+void ChemController:: ReacEnable(bool val){
+    quint8 data[2];
+    QByteArray receiveData = "";
+    data[0] = CMD_REAC_SET_STATE;
+    data[1] = (quint8)(val ? 1 : 0);
+    try {
+        qDebug() << "Отправка Состояния Реактора";
+        receiveData = writeAndRead(data, 2);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при отправки состояния Реактора";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size()!= 2){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+
+}
+
+void ChemController::ReacCalibration(){
+    quint8 data[1];
+    QByteArray receiveData = "";
+    data[0] = CMD_REAC_CALIBR;
+    try {
+        qDebug() << "Запуск калибровки реактора";
+        receiveData = writeAndRead(data);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при запуске Калибровки Реактора";
+        throw ChemException("Ошибка. Ошибка подключения.");
+
+    }
+    if (receiveData.size()!= 2){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+}
+
+qreal ChemController::ReacGetCurrPress(int ch){
+    quint8 data[2];
+    QByteArray receiveData = "";
+    data[0] = CMD_REAC_GET_CURR_PRESS;
+    data[1] = (quint8) ch;
+    try {
+        qDebug() << "Запрос значения ReacCurrPress";
+        receiveData = writeAndRead(data,2);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при запросе значения ReacCurrPress";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+
+    if (receiveData.size() == 5){
+        qint16 t = BitConvent16(receiveData, 3);
+        return (qreal) (qRound(t * 10 / 32.0)) / 10.0;
+    }
+    else {
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+}
+
+int ChemController::ReacGetSyrVol(int ch){
+    quint8 data[2];
+    QByteArray receiveData = "";
+    data[0] = CMD_REAC_GET_VOL;
+    data[1] = (quint8) ch;
+    try {
+        qDebug() << "Запрос значения REAC VOl";
+        receiveData = writeAndRead(data,2);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при запросе значения REAC VOl";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size() != 7){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+    qint32 num = BitConvent32(receiveData, 3);
+    return num;
+}
+
+void ChemController::ReacSetMotorVel(int ch, int val){
+    quint8 data[6];
+    QByteArray receiveData = "";
+    data[0] = CMD_REAC_SET_FREQ;
+    data[1] = (quint8) ch;
+
+    for (int i = 0; i < 4; i ++){
+        data[i + 2] = (quint8)(( val >> (8 * i)) & 0xFF);
+    }
+
+    try {
+        qDebug() << "Установка Частоты Реактора";
+        receiveData = writeAndRead(data, 6);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Установки Частоты Реактора";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size() != 2){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+}
+
+void ChemController::ReacSyrSetMode(int ch, int mode){
+    quint8 data[3];
+    QByteArray receiveData = "";
+    data[0] = CMD_REAC_SYR_SET_MODE;
+    data[1] = (quint8) ch;
+    data[2] = (quint8) mode;
+    try {
+        qDebug() << "Установка Режима Реактора";
+        receiveData = writeAndRead(data, 3);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Установки Режима Реактора";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size()!= 4){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+}
+
+int ChemController::ReacSyrGetMode(int ch){
+    QByteArray receiveData = "";
+    quint8 data[2];
+    data[0] = CMD_REAC_SYR_GET_MODE;
+    data[1] = (quint8) ch;
+    try {
+        qDebug() << "Запрос Режима Реактора";
+        receiveData = writeAndRead(data, 2);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Запросе Режима Реактора";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size()!= 3){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+    return (quint8) receiveData[2];
+
+}
+
+void ChemController::ReacSetPID(qreal kP, qreal kI, qreal kD, qreal A){
+    QByteArray receiveData = "";
+    quint8 data[9];
+    data[0] = CMD_REAC_SET_PID;
+    for (int i = 0; i < 2; i++){
+        data[i + 1] = (quint8)(( (quint16) (kP * qPow(2,5)) >> (8 * i) ) & 0xFF);
+        data[i + 3] = (quint8)(( (quint16) (kI * qPow(2,5)) >> (8 * i) ) & 0xFF);
+        data[i + 5] = (quint8)(( (quint16) (kD * qPow(2,5)) >> (8 * i) ) & 0xFF);
+        data[i + 7] = (quint8)(( (quint16) (A * qPow(2,5))  >> (8 * i) ) & 0xFF);
+    }
+    try {
+        qDebug() << "Установка PID";
+        receiveData = writeAndRead(data, 9);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Установке PID";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size() != 2){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+}
+
+void ChemController::ReacSetPress(int ch, qreal val){
+    QByteArray receiveData = "";
+    quint8 data[4];
+    data[0] = CMD_REAC_SET_PRESS;
+    data[1] = (quint8) ch;
+    for (int i = 0; i < 2; i++){
+        data[i + 2] = (quint8)(( (quint16) (val * qPow(2,5)) >> (8 * i) ) & 0xFF);
+    }
+    try {
+        qDebug() << "Установка React Press";
+        receiveData = writeAndRead(data, 4);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Установке React Press";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size() != 2){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+}
+
+void ChemController::ReacSetMaxSteps(int ch, int val){
+    QByteArray receiveData = "";
+    quint8 data[6];
+    data[0] = CMD_REAC_SET_MAX_STEPS;
+    data[1] = (quint8) ch;
+    for (int i = 0; i < 4;i ++){
+      data[i + 2] = (quint8)(( val >> (8 * i)) & 0xFF);
+    }
+
+    try {
+        qDebug() << "Установка React MaxSteps";
+        receiveData = writeAndRead(data, 6);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Установке React MaxSteps";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size() != 3){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+
+}
+
+int ChemController::ReacGetMaxSteps(int ch){
+    QByteArray receiveData = "";
+    quint8 data[2];
+    data[0] = CMD_REAC_GET_MAX_STEPS;
+    data[1] = (quint8) ch;
+    try {
+        qDebug() << "Запрос React MaxSteps";
+        receiveData = writeAndRead(data, 2);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Запросе React MaxSteps";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size() != 7){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+    return BitConvent32(receiveData, 3);
+}
+
+void ChemController::ReacSetPsc(int ch, int val){
+    QByteArray receiveData = "";
+    quint8 data[4];
+    data[0] = CMD_REAC_SET_PSC;
+    data[1] = (quint8) ch;
+    for (int i = 0; i < 2;i ++){
+      data[i + 2] = (quint8)(( (quint16) val >> (8 * i)) & 0xFF);
+    }
+
+    try {
+        qDebug() << "Установка React PSC";
+        receiveData = writeAndRead(data, 4);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Установка React PSC";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size()!= 3){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+}
+
+int ChemController::ReacGetPsc(int ch){
+    QByteArray receiveData = "";
+    quint8 data[2];
+    data[0] = CMD_REAC_GET_PSC;
+    data[1] = (quint8) ch;
+    try {
+        qDebug() << "Запрос React PSC";
+        receiveData = writeAndRead(data, 2);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Запросе React PSC";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size()!= 5){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+    return BitConvent16(receiveData, 3);
+}
+
+int ChemController::ReacGetMotorVel(int ch){
+    QByteArray receiveData = "";
+    quint8 data[2];
+    data[0] = CMD_REAC_GET_FREQ;
+    data[1] = (quint8) ch;
+    try {
+        qDebug() << "Запрос React MotorVel";
+        receiveData = writeAndRead(data, 2);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Запросе React MotorVel";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size() != 7){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+    return BitConvent32(receiveData, 3);
+}
+
+qreal ChemController::ReacGetSuppPress(int ch){
+    QByteArray receiveData = "";
+    quint8 data[2];
+    data[0] = CMD_REAC_GET_SUPP_PRESS;
+    data[1] = (quint8) ch;
+    try {
+        qDebug() << "Запрос React SuppPress";
+        receiveData = writeAndRead(data, 2);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Запросе React SuppPress";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size() == 5){
+        qint16 t = BitConvent16(receiveData, 3);
+        return (qreal) qRound(t * 10 / 32.0) / 10.0;
+    } else {
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+}
+
+bool ChemController::ReacGetCalibrFlag(){
+    QByteArray receiveData = "";
+    quint8 data[1];
+    data[0] = CMD_REAC_GET_CALIB_FLAG;
+    try {
+        qDebug() << "Запрос React CalibrFlag";
+        receiveData = writeAndRead(data);
+    }  catch (...) {
+        qDebug() << "Произошла ошибка при Запросе React CalibrFlag";
+        throw ChemException("Ошибка. Ошибка подключения.");
+    }
+    if (receiveData.size() != 3){
+        qDebug() << "Ошибка. Ответ не соответствует ожиданиям.";
+        throw ChemException("Ошибка. Ответ не соответствует ожиданиям.");
+    }
+    quint8 status = receiveData[2];
+    return status == 0 ? false : true;
+}
 
 void ChemController::OpenPython(){
     system("E:/ChemControllerGUI/test.py");
