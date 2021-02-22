@@ -244,6 +244,9 @@
         </item>
         <item row="6" column="1">
          <widget class="QDoubleSpinBox" name="set_tempbox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="decimals">
            <number>1</number>
           </property>
@@ -284,6 +287,9 @@
        </property>
       </widget>
       <widget class="QPushButton" name="buttonTStatOff">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="geometry">
         <rect>
          <x>200</x>
@@ -339,7 +345,7 @@
           <x>0</x>
           <y>50</y>
           <width>241</width>
-          <height>381</height>
+          <height>422</height>
          </rect>
         </property>
         <layout class="QFormLayout" name="formLayout_3">
@@ -374,9 +380,6 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="QComboBox" name="Range1"/>
-         </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_7">
            <property name="styleSheet">
@@ -391,7 +394,11 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QSpinBox" name="SpeedCode1"/>
+          <widget class="QSpinBox" name="SpeedCode1">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_8">
@@ -407,7 +414,11 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="Pressure1"/>
+          <widget class="QDoubleSpinBox" name="Pressure1">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="label_9">
@@ -513,6 +524,31 @@
            </property>
           </widget>
          </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="Range1">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="currentIndex">
+            <number>-1</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>R1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>R2</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>R3</string>
+            </property>
+           </item>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QComboBox" name="ModeCH1">
@@ -524,6 +560,24 @@
           <height>22</height>
          </rect>
         </property>
+        <property name="currentIndex">
+         <number>-1</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>Ручной</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Руч. без возврата</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Авто</string>
+         </property>
+        </item>
        </widget>
       </widget>
      </widget>
@@ -596,7 +650,29 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="Range2"/>
+          <widget class="QComboBox" name="Range2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="currentIndex">
+            <number>-1</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>R1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>R2</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>R3</string>
+            </property>
+           </item>
+          </widget>
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_18">
@@ -612,7 +688,11 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QSpinBox" name="SpeedCode2"/>
+          <widget class="QSpinBox" name="SpeedCode2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_19">
@@ -628,7 +708,11 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="Pressure2"/>
+          <widget class="QDoubleSpinBox" name="Pressure2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="label_20">
@@ -696,7 +780,7 @@
           </widget>
          </item>
          <item row="5" column="1">
-          <widget class="QLabel" name="rpress2Label">
+          <widget class="QLabel" name="press2Label">
            <property name="styleSheet">
             <string notr="true">font: 10pt &quot;Arial&quot;;</string>
            </property>
@@ -745,6 +829,24 @@
           <height>22</height>
          </rect>
         </property>
+        <property name="currentIndex">
+         <number>-1</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>Ручной</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Руч. без возврата</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Авто</string>
+         </property>
+        </item>
        </widget>
       </widget>
      </widget>
@@ -817,7 +919,29 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="Range3"/>
+          <widget class="QComboBox" name="Range3">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="currentIndex">
+            <number>-1</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>R1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>R2</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>R3</string>
+            </property>
+           </item>
+          </widget>
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_29">
@@ -833,7 +957,11 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QSpinBox" name="SpeedCode3"/>
+          <widget class="QSpinBox" name="SpeedCode3">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_30">
@@ -849,7 +977,11 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="Pressure3"/>
+          <widget class="QDoubleSpinBox" name="Pressure3">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="label_31">
@@ -966,6 +1098,24 @@
           <height>22</height>
          </rect>
         </property>
+        <property name="currentIndex">
+         <number>-1</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>Ручной</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Руч. без возврата</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Авто</string>
+         </property>
+        </item>
        </widget>
       </widget>
      </widget>
@@ -1038,7 +1188,29 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="Range4"/>
+          <widget class="QComboBox" name="Range4">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="currentIndex">
+            <number>-1</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>R1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>R2</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>R3</string>
+            </property>
+           </item>
+          </widget>
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_40">
@@ -1054,7 +1226,11 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QSpinBox" name="SpeedCode4"/>
+          <widget class="QSpinBox" name="SpeedCode4">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_41">
@@ -1070,7 +1246,11 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="Pressure4"/>
+          <widget class="QDoubleSpinBox" name="Pressure4">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="label_42">
@@ -1187,6 +1367,24 @@
           <height>22</height>
          </rect>
         </property>
+        <property name="currentIndex">
+         <number>-1</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>Ручной</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Руч. без возврата</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Авто</string>
+         </property>
+        </item>
        </widget>
       </widget>
      </widget>

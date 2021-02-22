@@ -73,7 +73,7 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
+      <widget class="QDoubleSpinBox" name="numKp"/>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="label">
@@ -86,7 +86,14 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
+      <widget class="QDoubleSpinBox" name="numKi">
+       <property name="minimum">
+        <double>-1000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>99999.000000000000000</double>
+       </property>
+      </widget>
      </item>
      <item row="2" column="0">
       <widget class="QLabel" name="label_3">
@@ -96,7 +103,14 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_3"/>
+      <widget class="QDoubleSpinBox" name="numKd">
+       <property name="minimum">
+        <double>-1000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>999999.989999999990687</double>
+       </property>
+      </widget>
      </item>
      <item row="3" column="0">
       <widget class="QLabel" name="label_4">
@@ -106,7 +120,14 @@
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_4"/>
+      <widget class="QDoubleSpinBox" name="numKa">
+       <property name="minimum">
+        <double>-1000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -207,43 +228,91 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_5"/>
-     </item>
      <item row="1" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_6"/>
+      <widget class="QDoubleSpinBox" name="numVolCH1">
+       <property name="minimum">
+        <double>-1000000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>999999999.990000009536743</double>
+       </property>
+      </widget>
      </item>
      <item row="6" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_11">
+      <widget class="QDoubleSpinBox" name="numXCH1">
        <property name="decimals">
         <number>9</number>
        </property>
        <property name="minimum">
         <double>-999.999900000000025</double>
+       </property>
+       <property name="maximum">
+        <double>99999999.989999994635582</double>
        </property>
       </widget>
      </item>
      <item row="7" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_12">
+      <widget class="QDoubleSpinBox" name="numYCH1">
        <property name="decimals">
         <number>9</number>
        </property>
        <property name="minimum">
         <double>-999.999900000000025</double>
        </property>
+       <property name="maximum">
+        <double>9999.989999999999782</double>
+       </property>
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QSpinBox" name="spinBox"/>
+      <widget class="QSpinBox" name="numPsc3CH1">
+       <property name="minimum">
+        <number>-100000000</number>
+       </property>
+       <property name="maximum">
+        <number>99999999</number>
+       </property>
+      </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QSpinBox" name="spinBox_2"/>
+      <widget class="QSpinBox" name="numPsc2CH1">
+       <property name="minimum">
+        <number>-100000000</number>
+       </property>
+       <property name="maximum">
+        <number>999999999</number>
+       </property>
+      </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QSpinBox" name="spinBox_3"/>
+      <widget class="QSpinBox" name="numPsc1CH1">
+       <property name="minimum">
+        <number>-1000000</number>
+       </property>
+       <property name="maximum">
+        <number>99999999</number>
+       </property>
+      </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QSpinBox" name="spinBox_4"/>
+      <widget class="QSpinBox" name="numMicroStepCH1">
+       <property name="minimum">
+        <number>-110000</number>
+       </property>
+       <property name="maximum">
+        <number>999999</number>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QSpinBox" name="numLenCH1">
+       <property name="minimum">
+        <number>-100000</number>
+       </property>
+       <property name="maximum">
+        <number>100000</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -344,43 +413,91 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_7"/>
-     </item>
      <item row="1" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_8"/>
+      <widget class="QDoubleSpinBox" name="numVolCH2">
+       <property name="minimum">
+        <double>-100000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>99999999.000000000000000</double>
+       </property>
+      </widget>
      </item>
      <item row="6" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_13">
+      <widget class="QDoubleSpinBox" name="numXCH2">
        <property name="decimals">
         <number>9</number>
        </property>
        <property name="minimum">
         <double>-999.999900000000025</double>
+       </property>
+       <property name="maximum">
+        <double>999999.989999999990687</double>
        </property>
       </widget>
      </item>
      <item row="7" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_14">
+      <widget class="QDoubleSpinBox" name="numYCH2">
        <property name="decimals">
         <number>9</number>
        </property>
        <property name="minimum">
         <double>-999.999900000000025</double>
        </property>
+       <property name="maximum">
+        <double>999999.989999999990687</double>
+       </property>
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QSpinBox" name="spinBox_5"/>
+      <widget class="QSpinBox" name="numPsc3CH2">
+       <property name="minimum">
+        <number>-1000000</number>
+       </property>
+       <property name="maximum">
+        <number>99999</number>
+       </property>
+      </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QSpinBox" name="spinBox_6"/>
+      <widget class="QSpinBox" name="numPsc2CH3">
+       <property name="minimum">
+        <number>-100000</number>
+       </property>
+       <property name="maximum">
+        <number>9999999</number>
+       </property>
+      </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QSpinBox" name="spinBox_7"/>
+      <widget class="QSpinBox" name="numPsc1CH2">
+       <property name="minimum">
+        <number>-10000</number>
+       </property>
+       <property name="maximum">
+        <number>9999999</number>
+       </property>
+      </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QSpinBox" name="spinBox_8"/>
+      <widget class="QSpinBox" name="numMicroStepCH2">
+       <property name="minimum">
+        <number>-10000</number>
+       </property>
+       <property name="maximum">
+        <number>99999</number>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QSpinBox" name="numLenCH2">
+       <property name="minimum">
+        <number>-1000000</number>
+       </property>
+       <property name="maximum">
+        <number>999999</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -481,43 +598,91 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_9"/>
-     </item>
      <item row="1" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_10"/>
+      <widget class="QDoubleSpinBox" name="numVolCH3">
+       <property name="minimum">
+        <double>-1000000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>9999999.000000000000000</double>
+       </property>
+      </widget>
      </item>
      <item row="6" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_15">
+      <widget class="QDoubleSpinBox" name="numXCH3">
        <property name="decimals">
         <number>9</number>
        </property>
        <property name="minimum">
         <double>-999.999900000000025</double>
+       </property>
+       <property name="maximum">
+        <double>99999.990000000005239</double>
        </property>
       </widget>
      </item>
      <item row="7" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_16">
+      <widget class="QDoubleSpinBox" name="numYCH3">
        <property name="decimals">
         <number>9</number>
        </property>
        <property name="minimum">
         <double>-999.999900000000025</double>
        </property>
+       <property name="maximum">
+        <double>99999999.000000000000000</double>
+       </property>
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QSpinBox" name="spinBox_9"/>
+      <widget class="QSpinBox" name="numPsc3CH3">
+       <property name="minimum">
+        <number>-1000000</number>
+       </property>
+       <property name="maximum">
+        <number>99999999</number>
+       </property>
+      </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QSpinBox" name="spinBox_10"/>
+      <widget class="QSpinBox" name="numPsc2CH2">
+       <property name="minimum">
+        <number>-10000000</number>
+       </property>
+       <property name="maximum">
+        <number>99999999</number>
+       </property>
+      </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QSpinBox" name="spinBox_11"/>
+      <widget class="QSpinBox" name="numPsc1CH3">
+       <property name="minimum">
+        <number>-100000</number>
+       </property>
+       <property name="maximum">
+        <number>9999999</number>
+       </property>
+      </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QSpinBox" name="spinBox_12"/>
+      <widget class="QSpinBox" name="numMicroStepCH3">
+       <property name="minimum">
+        <number>-1000000</number>
+       </property>
+       <property name="maximum">
+        <number>9999999</number>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QSpinBox" name="numLenCH3">
+       <property name="minimum">
+        <number>-100000</number>
+       </property>
+       <property name="maximum">
+        <number>9999999</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -618,43 +783,91 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_17"/>
-     </item>
      <item row="1" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_18"/>
+      <widget class="QDoubleSpinBox" name="numVolCH4">
+       <property name="minimum">
+        <double>-100000.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>9999999.990000000223517</double>
+       </property>
+      </widget>
      </item>
      <item row="6" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_19">
+      <widget class="QDoubleSpinBox" name="numXCH4">
        <property name="decimals">
         <number>9</number>
        </property>
        <property name="minimum">
         <double>-999.999900000000025</double>
+       </property>
+       <property name="maximum">
+        <double>99999.990000000005239</double>
        </property>
       </widget>
      </item>
      <item row="7" column="1">
-      <widget class="QDoubleSpinBox" name="doubleSpinBox_20">
+      <widget class="QDoubleSpinBox" name="numYCH4">
        <property name="decimals">
         <number>9</number>
        </property>
        <property name="minimum">
         <double>-999.999900000000025</double>
        </property>
+       <property name="maximum">
+        <double>999999.989999999990687</double>
+       </property>
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QSpinBox" name="spinBox_13"/>
+      <widget class="QSpinBox" name="numPsc3CH4">
+       <property name="minimum">
+        <number>-1000000</number>
+       </property>
+       <property name="maximum">
+        <number>99999</number>
+       </property>
+      </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QSpinBox" name="spinBox_14"/>
+      <widget class="QSpinBox" name="numPsc2CH4">
+       <property name="minimum">
+        <number>-100000</number>
+       </property>
+       <property name="maximum">
+        <number>999999</number>
+       </property>
+      </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QSpinBox" name="spinBox_15"/>
+      <widget class="QSpinBox" name="numPsc1CH4">
+       <property name="minimum">
+        <number>-100000</number>
+       </property>
+       <property name="maximum">
+        <number>999999</number>
+       </property>
+      </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QSpinBox" name="spinBox_16"/>
+      <widget class="QSpinBox" name="numMicroStepCH4">
+       <property name="minimum">
+        <number>-100000</number>
+       </property>
+       <property name="maximum">
+        <number>99999</number>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QSpinBox" name="numLenCH4">
+       <property name="minimum">
+        <number>-1000000</number>
+       </property>
+       <property name="maximum">
+        <number>9999999</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
